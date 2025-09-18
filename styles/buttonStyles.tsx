@@ -1,0 +1,106 @@
+import {COLOR} from '@/constants/color';
+import {StyleSheet} from 'react-native';
+
+export const buttonStyles = StyleSheet.create({
+  outline: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: 40,
+    backgroundColor: 'transparent',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: COLOR.PRIMARY,
+    // marginHorizontal: 10,
+  },
+
+  shortPrimary: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: COLOR.PRIMARY,
+    borderRadius: 48,
+    borderWidth: 1,
+    borderColor: COLOR.PRIMARY,
+    minHeight: 28,
+    maxWidth: 120,
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+    marginHorizontal: 10,
+  },
+
+  shortOutline: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+    borderRadius: 48,
+    borderWidth: 1,
+    borderColor: COLOR.GRAY3,
+    minHeight: 28,
+    maxWidth: 120,
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+    marginHorizontal: 10,
+  },
+
+  shortOutlinePrimary: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+    borderRadius: 48,
+    borderWidth: 1,
+    borderColor: COLOR.PRIMARY,
+    minHeight: 28,
+    maxWidth: 120,
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+    marginHorizontal: 10,
+  },
+
+  gray: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: 40,
+    backgroundColor: COLOR.GRAY1,
+    borderRadius: 8,
+    // marginHorizontal: 10,
+  },
+
+  shortGray: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: COLOR.GRAY1,
+    borderRadius: 48,
+    minHeight: 28,
+    maxWidth: 120,
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+    marginHorizontal: 10,
+  },
+
+  white: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: 40,
+    backgroundColor: COLOR.WHITE,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: COLOR.WHITE,
+    // marginHorizontal: 10,
+  },
+
+  empty: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    // padding: 10,
+    marginHorizontal: 10,
+  },
+});

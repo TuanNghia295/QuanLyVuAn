@@ -1,0 +1,47 @@
+[
+    {
+        "id": "101",
+        "caseNo": "CA-101",
+        "title": "Trộm cắp tài sản",
+        "status": "In Progress",
+        "openDate": "2025-09-01",
+        "closeDate": "",
+        "type": "Hình sự"
+    },
+    {
+        "id": "102",
+        "caseNo": "CA-102",
+        "title": "Lừa đảo chiếm đoạt tài sản",
+        "status": "Completed",
+        "openDate": "2025-08-15",
+        "closeDate": "2025-09-10",
+        "type": "Hình sự"
+    },
+    {
+        "id": "103",
+        "caseNo": "CA-103",
+        "title": "Cố ý gây thương tích",
+        "status": "Overdue",
+        "openDate": "2025-07-20",
+        "closeDate": "",
+        "type": "Hình sự"
+    },
+    {
+        "id": "104",
+        "caseNo": "CA-104",
+        "title": "Vi phạm hợp đồng lao động",
+        "status": "In Progress",
+        "openDate": "2025-09-05",
+        "closeDate": "",
+        "type": "Dân sự"
+    },
+    {
+        "id": "105",
+        "caseNo": "CA-105",
+        "title": "Tranh chấp đất đai",
+        "status": "Completed",
+        "openDate": "2025-06-10",
+        "closeDate": "2025-08-01",
+        "type": "Dân sự"
+    }
+]

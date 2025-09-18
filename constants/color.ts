@@ -1,0 +1,14 @@
+export const COLOR = {
+  PRIMARY: '#E62F2F',
+  OUTLINE: '#DFE0E5',
+  WHITE: '#FFFF',
+  GREEN: '#27ae60',
+  BLUE: '#2980b9',
+  BLACK1: '#000000',
+  BLACK2: '#5B5B5B',
+  GRAY1: '#E7E7E7',
+  GRAY2: '#F2F3F7',
+  GRAY3: '#A3A5AD',
+  GRAY4: '#8D8E8F',
+  GRAY5: '#09090A',
+};

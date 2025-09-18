@@ -1,0 +1,299 @@
+import {COLOR} from '@/constants/color';
+import * as ImagePicker from 'expo-image-picker';
+import React, {useState} from 'react';
+import {
+  Alert,
+  Image,
+  Modal,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+
+// Mock: current user
+const currentUser = {
+  id: '1',
+  name: 'Nguyen Van A',
+  email: 'admin@example.com',
+  phone: '0912345678',
+  role: 'admin',
+  status: 'active',
+};
+
+const ProfileScreen = () => {
+  const [avatarUri, setAvatarUri] = useState<string | null>(null);
+  const [referralCode, setReferralCode] = useState<string | null>(null);
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editName, setEditName] = useState(currentUser.name);
+  const [editPhone, setEditPhone] = useState(currentUser.phone || '');
+  const [editPassword, setEditPassword] = useState('');
+
+  const handleEditSave = () => {
+    Alert.alert('Cập nhật', 'Thông tin đã được lưu (mock)!');
+    setEditModalVisible(false);
+  };
+
+  const handleCreateReferral = () => {
+    const code = 'REF' + Math.floor(100000 + Math.random() * 900000);
+    setReferralCode(code);
+    Alert.alert('Mã giới thiệu', `Mã của bạn: ${code}`);
+  };
+
+  const handleLogout = () => {
+    Alert.alert('Đăng xuất', 'Bạn đã đăng xuất!');
+  };
+
+  const handlePickAvatar = async () => {
+    // xin quyền
+    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permissionResult.granted) {
+      Alert.alert('Quyền bị từ chối', 'Bạn cần cấp quyền để chọn ảnh đại diện.');
+      return;
+    }
+
+    // mở thư viện ảnh
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images', 'livePhotos'],
+      allowsEditing: true, // cho phép crop
+      aspect: [1, 1], // crop hình vuông
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      setAvatarUri(result.assets[0].uri);
+    }
+  };
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.card}>
+        <View style={styles.avatarBox}>
+          <TouchableOpacity onPress={handlePickAvatar}>
+            {avatarUri ? (
+              <Image source={{uri: avatarUri}} style={styles.avatarImage} />
+            ) : (
+              <View style={styles.avatarCircle}>
+                <Text style={styles.avatarText}>{currentUser.name.charAt(0)}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+          <Text style={styles.avatarHint}>Nhấn để đổi ảnh đại diện</Text>
+        </View>
+
+        <Text style={styles.title}>Thông tin cá nhân</Text>
+        <View style={styles.infoRow}>
+          <Text style={styles.label}>Tên:</Text>
+          <Text style={styles.value}>{currentUser.name}</Text>
+        </View>
+        <View style={styles.infoRow}>
+          <Text style={styles.label}>Số điện thoại:</Text>
+          <Text style={styles.value}>{currentUser.phone || '-'}</Text>
+        </View>
+        <View style={styles.infoRow}>
+          <Text style={styles.label}>Email:</Text>
+          <Text style={styles.value}>{currentUser.email}</Text>
+        </View>
+        <View style={styles.infoRow}>
+          <Text style={styles.label}>Vai trò:</Text>
+          <Text style={styles.value}>{currentUser.role === 'admin' ? 'Admin' : 'Người dùng'}</Text>
+        </View>
+        <View style={styles.infoRow}>
+          <Text style={styles.label}>Trạng thái:</Text>
+          <Text
+            style={[styles.value, currentUser.status === 'active' ? styles.active : styles.locked]}>
+            {currentUser.status === 'active' ? 'Hoạt động' : 'Khóa'}
+          </Text>
+        </View>
+
+        {currentUser.role === 'admin' && (
+          <TouchableOpacity style={styles.button} onPress={handleCreateReferral}>
+            <Text style={styles.buttonText}>Tạo mã giới thiệu</Text>
+          </TouchableOpacity>
+        )}
+        {currentUser.role === 'admin' && (
+          <View style={styles.referralBox}>
+            <Text style={styles.referralText}>Mã giới thiệu: {referralCode}</Text>
+          </View>
+        )}
+        <TouchableOpacity style={styles.editButton} onPress={() => setEditModalVisible(true)}>
+          <Text style={styles.editText}>Chỉnh sửa thông tin</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <Text style={styles.logoutText}>Đăng xuất</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Edit Modal */}
+      <Modal
+        visible={editModalVisible}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setEditModalVisible(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Chỉnh sửa thông tin</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Họ và tên"
+              value={editName}
+              onChangeText={setEditName}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Số điện thoại"
+              value={editPhone}
+              onChangeText={setEditPhone}
+              keyboardType="phone-pad"
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Mật khẩu mới"
+              value={editPassword}
+              onChangeText={setEditPassword}
+              secureTextEntry
+            />
+            <View style={styles.modalActions}>
+              <TouchableOpacity style={styles.saveButton} onPress={handleEditSave}>
+                <Text style={styles.saveText}>Lưu</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={() => setEditModalVisible(false)}>
+                <Text style={styles.cancelText}>Hủy</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f8f9fa',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+    elevation: 4,
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginBottom: 18,
+    color: '#2563eb',
+    textAlign: 'center',
+  },
+  infoRow: {flexDirection: 'row', marginBottom: 10, alignItems: 'center'},
+  label: {width: 90, fontWeight: '600', color: '#64748b', fontSize: 16},
+  value: {flex: 1, fontSize: 16, color: '#334155', fontWeight: '500'},
+  active: {color: '#22c55e', fontWeight: 'bold'},
+  locked: {color: '#ef4444', fontWeight: 'bold'},
+  avatarBox: {alignItems: 'center', marginBottom: 12},
+  avatarCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: '#e0e7ff',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatarText: {fontSize: 32, color: '#2563eb', fontWeight: 'bold'},
+  avatarImage: {width: 72, height: 72, borderRadius: 36},
+  avatarHint: {marginTop: 6, fontSize: 12, color: '#64748b'},
+  button: {
+    marginTop: 18,
+    backgroundColor: '#2563eb',
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  buttonText: {color: '#fff', fontWeight: 'bold', fontSize: 16},
+  logoutButton: {
+    marginTop: 18,
+    backgroundColor: COLOR.PRIMARY,
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  logoutText: {color: '#fff', fontWeight: 'bold', fontSize: 16, letterSpacing: 1},
+  referralBox: {
+    marginTop: 16,
+    backgroundColor: '#e0f2fe',
+    borderRadius: 8,
+    padding: 12,
+    alignItems: 'center',
+  },
+  referralText: {color: '#2563eb', fontWeight: 'bold', fontSize: 16},
+  editButton: {
+    marginTop: 18,
+    backgroundColor: '#f1f5f9',
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#2563eb',
+  },
+  editText: {color: '#2563eb', fontWeight: 'bold', fontSize: 16},
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    padding: 24,
+    width: '90%',
+    maxWidth: 350,
+    elevation: 6,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#2563eb',
+    marginBottom: 18,
+    textAlign: 'center',
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 14,
+    fontSize: 16,
+    backgroundColor: '#f8fafc',
+  },
+  modalActions: {flexDirection: 'row', justifyContent: 'space-between', marginTop: 8},
+  saveButton: {
+    backgroundColor: '#2563eb',
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+  },
+  saveText: {color: '#fff', fontWeight: 'bold', fontSize: 16},
+  cancelButton: {
+    backgroundColor: '#f1f5f9',
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#64748b',
+  },
+  cancelText: {color: '#64748b', fontWeight: 'bold', fontSize: 16},
+});
+
+export default ProfileScreen;
