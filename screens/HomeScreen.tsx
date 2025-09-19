@@ -1,7 +1,19 @@
+import ButtonComponent from '@/components/buttonComponent';
+import Space from '@/components/Space';
 import {COLOR} from '@/constants/color';
+import {useRouter} from 'expo-router';
 import React from 'react';
-import {Dimensions, FlatList, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import {Dimensions, FlatList, StyleSheet, Text, View} from 'react-native';
 import {PieChart} from 'react-native-chart-kit';
+import CaseListScreen from './Case/CaseListScreen';
+
+// Mock: role hiện tại
+const currentUser = {
+  id: '1',
+  name: 'Nguyen Van A',
+  role: 'admin', // hoặc 'user'
+};
+
 const mockStats = {
   total: 120,
   expiring: 8,
@@ -16,25 +28,15 @@ const mockRecentCases = [
 ];
 
 const HomeScreen = () => {
+  const isAdmin = currentUser.role === 'admin';
+  const router = useRouter();
   return (
     <View>
       <Text style={styles.title}>Quản lý vụ án</Text>
       <FlatList
         data={mockRecentCases}
         keyExtractor={item => item.id}
-        renderItem={({item}) => (
-          <View style={styles.caseItem}>
-            <View style={{flex: 1}}>
-              <Text style={styles.caseName}>{item.name}</Text>
-              <Text style={styles.caseStatus}>
-                {item.status} - Hạn: {item.due}
-              </Text>
-            </View>
-            <TouchableOpacity style={styles.detailBtn}>
-              <Text style={styles.detailBtnText}>Chi tiết</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+        renderItem={({item}) => <CaseListScreen item={item} />}
         ListHeaderComponent={
           <>
             <View style={styles.statsRow}>{/* ...stats UI... */}</View>
@@ -67,9 +69,24 @@ const HomeScreen = () => {
                 absolute
               />
             </View>
-            <TouchableOpacity style={styles.createBtn}>
-              <Text style={styles.createBtnText}>+ Tạo vụ án mới</Text>
-            </TouchableOpacity>
+
+            {/* Chỉ hiện cho Admin */}
+            {isAdmin && (
+              <>
+                <ButtonComponent
+                  title="+ Tạo vụ án mới"
+                  onPress={() => router.push('/caseCreate')}
+                />
+
+                <Space height={12} />
+
+                {/* <ButtonComponent
+                  title="+ Quản lý mẫu vụ án"
+                  onPress={() => router.push('/createTemplate')}
+                /> */}
+              </>
+            )}
+            <Space height={12} />
             <Text style={styles.sectionTitle}>Danh sách vụ án</Text>
           </>
         }
@@ -80,10 +97,11 @@ const HomeScreen = () => {
 
 const styles = StyleSheet.create({
   title: {
-    fontSize: 26,
+    fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 16,
     color: '#222',
+    textAlign: 'center',
   },
   statsRow: {
     flexDirection: 'row',
@@ -135,37 +153,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 8,
     color: '#222',
-  },
-  caseItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLOR.WHITE,
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 10,
-    elevation: 1,
-  },
-  caseName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#222',
-  },
-  caseStatus: {
-    fontSize: 14,
-    color: '#888',
-    marginTop: 2,
-  },
-  detailBtn: {
-    backgroundColor: COLOR.GREEN,
-    borderRadius: 6,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    marginLeft: 8,
-  },
-  detailBtnText: {
-    color: COLOR.WHITE,
-    fontSize: 14,
-    fontWeight: 'bold',
   },
 });
 

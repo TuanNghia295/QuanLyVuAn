@@ -82,7 +82,7 @@ const LoginScreen = () => {
           title="Đăng ký"
           type="outline"
           textStyle={{fontWeight: 'bold'}}
-          onPress={() => router.push('/register')}
+          onPress={() => router.push(`/register`)}
         />
       </View>
     </View>

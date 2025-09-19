@@ -1,6 +1,8 @@
 import {COLOR} from '@/constants/color';
+import {yupResolver} from '@hookform/resolvers/yup';
 import * as ImagePicker from 'expo-image-picker';
 import React, {useState} from 'react';
+import {Controller, useForm} from 'react-hook-form';
 import {
   Alert,
   Image,
@@ -11,6 +13,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import * as yup from 'yup';
 
 // Mock: current user
 const currentUser = {
@@ -26,13 +29,34 @@ const ProfileScreen = () => {
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
   const [referralCode, setReferralCode] = useState<string | null>(null);
   const [editModalVisible, setEditModalVisible] = useState(false);
-  const [editName, setEditName] = useState(currentUser.name);
-  const [editPhone, setEditPhone] = useState(currentUser.phone || '');
-  const [editPassword, setEditPassword] = useState('');
+  // Validation schema
+  const schema = yup.object().shape({
+    name: yup.string().required('Vui lòng nhập họ và tên'),
+    phone: yup
+      .string()
+      .required('Vui lòng nhập số điện thoại')
+      .matches(/^0\d{9,10}$/, 'Số điện thoại không hợp lệ'),
+    password: yup.string().min(6, 'Mật khẩu ít nhất 6 ký tự'),
+  });
 
-  const handleEditSave = () => {
+  const {
+    control,
+    handleSubmit,
+    formState: {errors},
+    reset,
+  } = useForm({
+    defaultValues: {
+      name: currentUser.name,
+      phone: currentUser.phone,
+      password: '',
+    },
+    resolver: yupResolver(schema),
+  });
+
+  const handleEditSave = (data: any) => {
     Alert.alert('Cập nhật', 'Thông tin đã được lưu (mock)!');
     setEditModalVisible(false);
+    reset();
   };
 
   const handleCreateReferral = () => {
@@ -134,30 +158,52 @@ const ProfileScreen = () => {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Chỉnh sửa thông tin</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Họ và tên"
-              value={editName}
-              onChangeText={setEditName}
+            <Controller
+              control={control}
+              name="name"
+              render={({field: {onChange, value}}) => (
+                <TextInput
+                  style={styles.input}
+                  placeholder="Họ và tên"
+                  value={value}
+                  onChangeText={onChange}
+                />
+              )}
             />
-            <TextInput
-              style={styles.input}
-              placeholder="Số điện thoại"
-              value={editPhone}
-              onChangeText={setEditPhone}
-              keyboardType="phone-pad"
+            {errors.name && <Text style={styles.errorText}>{errors.name.message}</Text>}
+            <Controller
+              control={control}
+              name="phone"
+              render={({field: {onChange, value}}) => (
+                <TextInput
+                  style={styles.input}
+                  placeholder="Số điện thoại"
+                  value={value}
+                  onChangeText={onChange}
+                  keyboardType="phone-pad"
+                />
+              )}
             />
-            <TextInput
-              style={styles.input}
-              placeholder="Mật khẩu mới"
-              value={editPassword}
-              onChangeText={setEditPassword}
-              secureTextEntry
+            {errors.phone && <Text style={styles.errorText}>{errors.phone.message}</Text>}
+            <Controller
+              control={control}
+              name="password"
+              render={({field: {onChange, value}}) => (
+                <TextInput
+                  style={styles.input}
+                  placeholder="Mật khẩu mới"
+                  value={value}
+                  onChangeText={onChange}
+                  secureTextEntry
+                />
+              )}
             />
+            {errors.password && <Text style={styles.errorText}>{errors.password.message}</Text>}
             <View style={styles.modalActions}>
-              <TouchableOpacity style={styles.saveButton} onPress={handleEditSave}>
+              <TouchableOpacity style={styles.saveButton} onPress={handleSubmit(handleEditSave)}>
                 <Text style={styles.saveText}>Lưu</Text>
               </TouchableOpacity>
+
               <TouchableOpacity
                 style={styles.cancelButton}
                 onPress={() => setEditModalVisible(false)}>
@@ -191,14 +237,14 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: 'bold',
     marginBottom: 18,
-    color: '#2563eb',
+    color: COLOR.BLUE,
     textAlign: 'center',
   },
   infoRow: {flexDirection: 'row', marginBottom: 10, alignItems: 'center'},
   label: {width: 90, fontWeight: '600', color: '#64748b', fontSize: 16},
   value: {flex: 1, fontSize: 16, color: '#334155', fontWeight: '500'},
-  active: {color: '#22c55e', fontWeight: 'bold'},
-  locked: {color: '#ef4444', fontWeight: 'bold'},
+  active: {color: COLOR.GREEN, fontWeight: 'bold'},
+  locked: {color: COLOR.PRIMARY, fontWeight: 'bold'},
   avatarBox: {alignItems: 'center', marginBottom: 12},
   avatarCircle: {
     width: 72,
@@ -208,12 +254,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  avatarText: {fontSize: 32, color: '#2563eb', fontWeight: 'bold'},
+  avatarText: {fontSize: 32, color: COLOR.BLUE, fontWeight: 'bold'},
   avatarImage: {width: 72, height: 72, borderRadius: 36},
   avatarHint: {marginTop: 6, fontSize: 12, color: '#64748b'},
   button: {
     marginTop: 18,
-    backgroundColor: '#2563eb',
+    backgroundColor: COLOR.BLUE,
     borderRadius: 8,
     paddingVertical: 12,
     alignItems: 'center',
@@ -234,7 +280,7 @@ const styles = StyleSheet.create({
     padding: 12,
     alignItems: 'center',
   },
-  referralText: {color: '#2563eb', fontWeight: 'bold', fontSize: 16},
+  referralText: {color: COLOR.BLUE, fontWeight: 'bold', fontSize: 16},
   editButton: {
     marginTop: 18,
     backgroundColor: '#f1f5f9',
@@ -242,9 +288,9 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#2563eb',
+    borderColor: COLOR.BLUE,
   },
-  editText: {color: '#2563eb', fontWeight: 'bold', fontSize: 16},
+  editText: {color: COLOR.BLUE, fontWeight: 'bold', fontSize: 16},
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.2)',
@@ -262,7 +308,7 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#2563eb',
+    color: COLOR.BLUE,
     marginBottom: 18,
     textAlign: 'center',
   },
@@ -277,7 +323,7 @@ const styles = StyleSheet.create({
   },
   modalActions: {flexDirection: 'row', justifyContent: 'space-between', marginTop: 8},
   saveButton: {
-    backgroundColor: '#2563eb',
+    backgroundColor: COLOR.BLUE,
     borderRadius: 8,
     paddingVertical: 10,
     paddingHorizontal: 24,
@@ -294,6 +340,12 @@ const styles = StyleSheet.create({
     borderColor: '#64748b',
   },
   cancelText: {color: '#64748b', fontWeight: 'bold', fontSize: 16},
+  errorText: {
+    color: COLOR.PRIMARY,
+    fontSize: 13,
+    marginBottom: 8,
+    marginLeft: 4,
+  },
 });
 
 export default ProfileScreen;

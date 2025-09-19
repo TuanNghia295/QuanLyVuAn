@@ -20,6 +20,7 @@ export const globalStyles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLOR.PRIMARY,
     // marginHorizontal: 10,
+    paddingVertical: 12,
   },
   text: {
     fontFamily: fontFamilies.regular,

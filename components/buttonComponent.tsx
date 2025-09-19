@@ -105,6 +105,7 @@ const ButtonComponent: React.FC<ButtonComponentProps> = ({
           {
             marginLeft: icon && iconFlex === 'left' ? 12 : 0,
             textAlign: 'center',
+            fontWeight: 'bold',
           },
         ]}
         flex={0}
