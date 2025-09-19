@@ -1,9 +1,12 @@
+import ButtonComponent from '@/components/buttonComponent';
 import {COLOR} from '@/constants/color';
+import {useRouter} from 'expo-router';
 import React from 'react';
-import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import {StyleSheet, Text, View} from 'react-native';
 
 type Props = {
   item?: {
+    id?: string;
     name?: string;
     status?: string;
     due?: string;
@@ -11,6 +14,7 @@ type Props = {
 };
 
 const CaseListScreen = ({item}: Props) => {
+  const router = useRouter();
   return (
     <View style={styles.caseItem}>
       <View style={{flex: 1}}>
@@ -19,9 +23,12 @@ const CaseListScreen = ({item}: Props) => {
           {item?.status ?? 'Chưa có trạng thái'} - Hạn: {item?.due ?? 'Không xác định'}
         </Text>
       </View>
-      <TouchableOpacity style={styles.detailBtn}>
-        <Text style={styles.detailBtnText}>Chi tiết</Text>
-      </TouchableOpacity>
+      <ButtonComponent
+        title="Chi tiết"
+        type="empty"
+        textStyle={{color: COLOR.PRIMARY, textDecorationLine: 'underline'}}
+        onPress={() => router.push({pathname: '/caseDetail', params: {id: item?.id?.toString()}})}
+      />
     </View>
   );
 };

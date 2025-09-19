@@ -18,7 +18,12 @@ const Layout = () => {
           title: 'Tạo vụ án',
         }}
       />
-      <Stack.Screen name="caseDetail" />
+      <Stack.Screen
+        name="caseDetail"
+        options={{
+          title: '',
+        }}
+      />
     </Stack>
   );
 };

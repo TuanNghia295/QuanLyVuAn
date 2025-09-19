@@ -101,7 +101,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   locked: {
-    color: '#ef4444',
+    color: COLOR.PRIMARY,
     fontWeight: 'bold',
   },
 });

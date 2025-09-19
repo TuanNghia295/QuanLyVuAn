@@ -1,9 +1,11 @@
 import StageDatePicker from '@/components/DatePicker/StageDatePicker';
 import RenderModalDropdown from '@/components/Modal/DropdownModal';
+import {COLOR} from '@/constants/color';
 import {yupResolver} from '@hookform/resolvers/yup';
 import React from 'react';
 import {Controller, useFieldArray, useForm} from 'react-hook-form';
 import {ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View} from 'react-native';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import * as yup from 'yup';
 
 // Mock data
@@ -39,8 +41,9 @@ const schema = yup.object().shape({
     }),
   ),
 });
-
 export default function CaseCreateScreen() {
+  const inset = useSafeAreaInsets();
+
   const {
     control,
     handleSubmit,
@@ -278,12 +281,14 @@ export default function CaseCreateScreen() {
       ))}
 
       <TouchableOpacity
-        style={styles.addBtn}
+        style={[styles.addBtn]}
         onPress={() => append({name: '', timeline: '', startTime: '', endTime: ''})}>
         <Text style={styles.addText}>Thêm giai đoạn</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.saveBtn} onPress={handleSubmit(onSubmit)}>
+      <TouchableOpacity
+        style={[styles.saveBtn, {marginBottom: inset.bottom + 16}]}
+        onPress={handleSubmit(onSubmit)}>
         <Text style={styles.saveText}>Tạo vụ án</Text>
       </TouchableOpacity>
     </ScrollView>
@@ -313,7 +318,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     backgroundColor: '#f8fafc',
   },
-  error: {color: '#ef4444', fontSize: 13, marginTop: 4},
+  error: {color: COLOR.PRIMARY, fontSize: 13, marginTop: 4},
   sectionTitle: {fontSize: 16, fontWeight: 'bold', color: '#2563eb', marginLeft: 16, marginTop: 18},
   stageBox: {
     backgroundColor: '#fff',
@@ -333,17 +338,19 @@ const styles = StyleSheet.create({
     padding: 8,
     alignItems: 'center',
   },
-  removeText: {color: '#ef4444', fontWeight: 'bold'},
+  removeText: {color: COLOR.PRIMARY, fontWeight: 'bold'},
   addBtn: {
-    margin: 16,
     backgroundColor: '#e0e7ff',
     borderRadius: 8,
     padding: 12,
     alignItems: 'center',
+    marginVertical: 8,
+    marginHorizontal: 16,
   },
   addText: {color: '#2563eb', fontWeight: 'bold'},
   saveBtn: {
-    margin: 16,
+    marginVertical: 8,
+    marginHorizontal: 16,
     backgroundColor: '#2563eb',
     borderRadius: 8,
     padding: 14,

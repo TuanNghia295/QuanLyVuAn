@@ -1,14 +1,11 @@
+import CaseDetailScreen from '@/screens/Case/CaseDetailScreen';
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import {StyleSheet} from 'react-native';
 
 const CaseDetail = () => {
-    return (
-        <View>
-            
-        </View>
-    );
-}
+  return <CaseDetailScreen />;
+};
 
-const styles = StyleSheet.create({})
+const styles = StyleSheet.create({});
 
 export default CaseDetail;
