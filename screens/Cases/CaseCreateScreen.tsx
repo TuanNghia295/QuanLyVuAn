@@ -130,7 +130,7 @@ export default function CaseCreateScreen() {
             control={control}
             name="endDate"
             render={({field: {onChange, value}}) => (
-              <StageDatePicker label="Chọn hế hạn" value={value} onChange={onChange} />
+              <StageDatePicker label="Chọn ngày hết hạn" value={value} onChange={onChange} />
             )}
           />
           {errors.endDate && <Text style={styles.error}>{errors.endDate.message}</Text>}

@@ -8,6 +8,7 @@ import {
   StyleSheet,
   TextStyle,
   TouchableOpacity,
+  ViewStyle,
 } from 'react-native';
 import TextComponent from './textComponent';
 
@@ -32,6 +33,7 @@ interface ButtonComponentProps {
   icon?: React.ReactNode;
   iconFlex?: IconFlex;
   textStyle?: StyleProp<TextStyle>;
+  styles?: StyleProp<ViewStyle>;
 }
 
 const ButtonComponent: React.FC<ButtonComponentProps> = ({
@@ -42,6 +44,7 @@ const ButtonComponent: React.FC<ButtonComponentProps> = ({
   icon,
   iconFlex,
   textStyle,
+  styles,
 }) => {
   const getButtonStyle = (type: ButtonType) => {
     switch (type) {
@@ -95,7 +98,7 @@ const ButtonComponent: React.FC<ButtonComponentProps> = ({
   };
 
   return (
-    <TouchableOpacity onPress={onPress} style={getButtonStyle(type)} disabled={isDisable}>
+    <TouchableOpacity onPress={onPress} style={[getButtonStyle(type), styles]} disabled={isDisable}>
       {renderIcon('left')}
       <TextComponent
         color={getTextColor(type)}

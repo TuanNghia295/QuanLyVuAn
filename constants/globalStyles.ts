@@ -27,4 +27,9 @@ export const globalStyles = StyleSheet.create({
     fontSize: 14,
     color: COLOR.BLACK1,
   },
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+  },
 });

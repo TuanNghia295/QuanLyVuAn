@@ -1,4 +1,4 @@
-import CaseDetailScreen from '@/screens/Case/CaseDetailScreen';
+import CaseDetailScreen from '@/screens/Cases/CaseDetailScreen';
 import React from 'react';
 import {StyleSheet} from 'react-native';
 

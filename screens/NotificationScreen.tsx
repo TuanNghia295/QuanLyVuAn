@@ -1,4 +1,5 @@
 import {COLOR} from '@/constants/color';
+import {useRouter} from 'expo-router';
 import React from 'react';
 import {FlatList, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 
@@ -27,6 +28,7 @@ const mockNotifications = [
 ];
 
 const NotificationScreen = () => {
+  const router = useRouter();
   return (
     <View>
       <Text style={styles.title}>Thông báo vụ án</Text>
@@ -40,7 +42,9 @@ const NotificationScreen = () => {
               <Text style={styles.itemCase}>{item.caseName}</Text>
               <Text style={styles.itemTime}>{item.time}</Text>
             </View>
-            <TouchableOpacity style={styles.detailBtn}>
+            <TouchableOpacity
+              style={styles.detailBtn}
+              onPress={() => router.push(`/caseDetail?id=${item.id}`)}>
               <Text style={styles.detailBtnText}>Xem chi tiết</Text>
             </TouchableOpacity>
           </View>

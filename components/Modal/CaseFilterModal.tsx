@@ -69,20 +69,18 @@ const CaseFilterModal: React.FC<CaseFilterModalProps> = ({
 
           {/* Trạng thái */}
           <Text style={styles.filterLabel}>Trạng thái:</Text>
-          <FlatList
-            horizontal
-            data={statusOptions}
-            keyExtractor={item => item}
-            renderItem={({item}) => (
+          <View style={{flexDirection: 'row', flexWrap: 'wrap'}}>
+            {statusOptions.map(item => (
               <TouchableOpacity
+                key={item}
                 style={[styles.filterBtn, pendingStatus === item && styles.filterBtnActive]}
                 onPress={() => setPendingStatus(pendingStatus === item ? '' : item)}>
                 <Text style={pendingStatus === item ? styles.filterTextActive : styles.filterText}>
                   {item}
                 </Text>
               </TouchableOpacity>
-            )}
-          />
+            ))}
+          </View>
 
           {/* Ngày ra quyết định */}
           <Text style={styles.filterLabel}>Ngày ra quyết định:</Text>
@@ -153,6 +151,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     marginRight: 8,
+    marginBottom: 8,
   },
   filterBtnActive: {backgroundColor: COLOR.PRIMARY},
   filterText: {color: '#334155'},

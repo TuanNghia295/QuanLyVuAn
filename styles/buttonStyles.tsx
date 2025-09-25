@@ -16,18 +16,10 @@ export const buttonStyles = StyleSheet.create({
   },
 
   shortPrimary: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: COLOR.PRIMARY,
-    borderRadius: 48,
-    borderWidth: 1,
-    borderColor: COLOR.PRIMARY,
-    minHeight: 28,
-    maxWidth: 120,
+    paddingHorizontal: 16,
     paddingVertical: 8,
-    paddingHorizontal: 20,
-    marginHorizontal: 10,
+    borderRadius: 8,
+    backgroundColor: COLOR.PRIMARY,
   },
 
   shortOutline: {
@@ -76,11 +68,11 @@ export const buttonStyles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: COLOR.GRAY1,
-    borderRadius: 48,
     minHeight: 28,
     maxWidth: 120,
+    paddingHorizontal: 16,
     paddingVertical: 8,
-    paddingHorizontal: 20,
+    borderRadius: 8,
     marginHorizontal: 10,
   },
 

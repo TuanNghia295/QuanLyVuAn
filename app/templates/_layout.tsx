@@ -12,18 +12,9 @@ const Layout = () => {
         headerStyle: {backgroundColor: COLOR.GRAY2},
         headerShadowVisible: false,
       }}>
-      <Stack.Screen
-        name="caseCreate"
-        options={{
-          title: 'Tạo vụ án',
-        }}
-      />
-      <Stack.Screen
-        name="caseDetail"
-        options={{
-          title: 'Chi tiết',
-        }}
-      />
+      <Stack.Screen name="templateList" options={{title: 'Danh sách'}} />
+      <Stack.Screen name="templateDetail" options={{title: 'Chi tiết'}} />
+      <Stack.Screen name="templateCreate" />
     </Stack>
   );
 };

@@ -10,5 +10,5 @@ export const COLOR = {
   GRAY2: '#F2F3F7',
   GRAY3: '#A3A5AD',
   GRAY4: '#8D8E8F',
-  GRAY5: '#09090A',
+  GRAY5: '#475569',
 };
