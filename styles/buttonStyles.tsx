@@ -3,7 +3,6 @@ import {StyleSheet} from 'react-native';
 
 export const buttonStyles = StyleSheet.create({
   outline: {
-    flex: 1,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',

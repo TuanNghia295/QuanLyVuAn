@@ -16,7 +16,7 @@ import {PieChart} from 'react-native-chart-kit';
 
 import ButtonComponent from '@/components/buttonComponent';
 import CaseFilterModal from '@/components/Modal/CaseFilterModal';
-import RowComponent from '@/components/rowComponent';
+import RowComponent from '@/components/RowComponent';
 import {COLOR} from '@/constants/color';
 
 // Mock: role hiện tại

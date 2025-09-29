@@ -1,4 +1,6 @@
+import LoadingComponent from '@/components/LoadingComponent';
 import {COLOR} from '@/constants/color';
+import {useLogout} from '@/hooks/useAuth';
 import {yupResolver} from '@hookform/resolvers/yup';
 import * as ImagePicker from 'expo-image-picker';
 import React, {useState} from 'react';
@@ -13,6 +15,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import {SafeAreaView} from 'react-native-safe-area-context';
 import * as yup from 'yup';
 
 // Mock: current user
@@ -29,6 +32,8 @@ const ProfileScreen = () => {
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
   const [referralCode, setReferralCode] = useState<string | null>(null);
   const [editModalVisible, setEditModalVisible] = useState(false);
+  const {mutate: onLogOut, isPending: isLoggingOut} = useLogout();
+
   // Validation schema
   const schema = yup.object().shape({
     name: yup.string().required('Vui lòng nhập họ và tên'),
@@ -65,8 +70,8 @@ const ProfileScreen = () => {
     Alert.alert('Mã giới thiệu', `Mã của bạn: ${code}`);
   };
 
-  const handleLogout = () => {
-    Alert.alert('Đăng xuất', 'Bạn đã đăng xuất!');
+  const handleLogout = async () => {
+    await onLogOut();
   };
 
   const handlePickAvatar = async () => {
@@ -91,7 +96,7 @@ const ProfileScreen = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.card}>
         <View style={styles.avatarBox}>
           <TouchableOpacity onPress={handlePickAvatar}>
@@ -148,6 +153,8 @@ const ProfileScreen = () => {
           <Text style={styles.logoutText}>Đăng xuất</Text>
         </TouchableOpacity>
       </View>
+
+      {isLoggingOut && <LoadingComponent />}
 
       {/* Edit Modal */}
       <Modal
@@ -213,7 +220,7 @@ const ProfileScreen = () => {
           </View>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 };
 

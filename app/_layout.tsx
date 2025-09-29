@@ -1,20 +1,24 @@
-import {DarkTheme, DefaultTheme, ThemeProvider} from '@react-navigation/native';
+import {useColorScheme} from '@/hooks/use-color-scheme';
+import {useUserStore} from '@/store/userStore';
+import {DefaultTheme, ThemeProvider} from '@react-navigation/native';
+import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
+import {useFonts} from 'expo-font';
+import {Stack, useRouter} from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import {StatusBar} from 'expo-status-bar';
+import {useEffect} from 'react';
+import {Text, TextInput} from 'react-native';
 import 'react-native-reanimated';
 
-import {useColorScheme} from '@/hooks/use-color-scheme';
-import {useFonts} from 'expo-font';
-import {Stack} from 'expo-router';
-import {useEffect} from 'react';
-import {TextInput} from 'react-native';
+// Prevent splash screen from auto hiding
+SplashScreen.preventAutoHideAsync();
 
-SplashScreen.preventAutoHideAsync(); // Giữ Splash Screen mặc định
+const queryClient = new QueryClient();
 
 export default function RootLayout() {
+  const router = useRouter();
   const colorScheme = useColorScheme();
-  const isLoggedIn = true;
-  // 👉 Load nhiều font
+  const {loadToken, checkToken} = useUserStore();
   const [loaded] = useFonts({
     RobotoRegular: require('../assets/fonts/Roboto-Regular.ttf'),
     RobotoBold: require('../assets/fonts/Roboto-Bold.ttf'),
@@ -22,33 +26,42 @@ export default function RootLayout() {
     RobotoBlack: require('../assets/fonts/Roboto-Black.ttf'),
   });
 
+  // Set default font scaling for Text and TextInput
   useEffect(() => {
     if ((Text as any).defaultProps == null) (Text as any).defaultProps = {};
     if ((TextInput as any).defaultProps == null) (TextInput as any).defaultProps = {};
     (Text as any).defaultProps.allowFontScaling = false;
     (TextInput as any).defaultProps.allowFontScaling = false;
+  }, []);
 
+  // Hide splash screen when fonts are loaded
+  useEffect(() => {
     if (loaded) {
-      SplashScreen.hideAsync(); // tự động ẩn splashScreen sau khi load xong
+      SplashScreen.hideAsync();
     }
   }, [loaded]);
 
-  if (!loaded) {
-    return null;
-  }
+  // Check token and redirect if not valid
+  useEffect(() => {
+    const checkLogin = async () => {
+      await loadToken();
+      const valid = await checkToken();
+      if (!valid) router.push('/(auth)/login');
+    };
+    checkLogin();
+  }, [router, loadToken, checkToken]);
 
+  if (!loaded) return null;
+
+  // Determine theme and navigation stack
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack screenOptions={{headerShown: false}}>
-        {isLoggedIn ? (
-          // Nếu đã login -> vào app
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider value={colorScheme === 'light' ? DefaultTheme : DefaultTheme}>
+        <Stack screenOptions={{headerShown: false}}>
           <Stack.Screen name="(app)/(tabs)" />
-        ) : (
-          // Nếu chưa login -> vào nhóm Authentication
-          <Stack.Screen name="(auth)" />
-        )}
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+        </Stack>
+        <StatusBar style="dark" />
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 }

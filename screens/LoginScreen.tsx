@@ -1,15 +1,30 @@
 import ButtonComponent from '@/components/buttonComponent';
+import LoadingComponent from '@/components/LoadingComponent';
+import RowComponent from '@/components/rowComponent';
 import Space from '@/components/Space';
+import TextComponent from '@/components/textComponent';
 import {COLOR} from '@/constants/color';
+import {fontFamilies} from '@/constants/fontFamilies';
+import {useLogin} from '@/hooks/useAuth';
 import {yupResolver} from '@hookform/resolvers/yup';
 import {useRouter} from 'expo-router';
 import React from 'react';
 import {Controller, useForm} from 'react-hook-form';
-import {StyleSheet, Text, TextInput, View} from 'react-native';
+import {
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableWithoutFeedback,
+  View,
+} from 'react-native';
+import {SafeAreaView} from 'react-native-safe-area-context';
 import * as Yup from 'yup';
 
 const LoginSchema = Yup.object().shape({
-  username: Yup.string().required('Vui lòng nhập tên đăng nhập'),
+  username: Yup.string().required('Vui lòng nhập số điện thoại'),
   password: Yup.string().required('Vui lòng nhập mật khẩu'),
 });
 
@@ -28,64 +43,84 @@ const LoginScreen = () => {
   });
 
   const router = useRouter();
+  const {mutateAsync: onLogin, isPending, isError, isSuccess} = useLogin();
 
   const onSubmit = (data: LoginForm) => {
-    console.log('📌 Dữ liệu login:', data);
+    onLogin(data);
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Đăng nhập</Text>
-      <View style={styles.form}>
-        {/* Username */}
-        <Controller
-          control={control}
-          name="username"
-          render={({field: {onChange, value}}) => (
-            <TextInput
-              style={styles.input}
-              placeholder="Tên đăng nhập"
-              autoCapitalize="none"
-              value={value}
-              onChangeText={onChange}
-            />
-          )}
-        />
-        {errors.username && <Text style={styles.error}>{errors.username.message}</Text>}
+    <SafeAreaView style={styles.container}>
+      {isPending && <LoadingComponent />}
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+        <KeyboardAvoidingView
+          style={{flex: 1, width: '100%'}}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <View style={styles.inner}>
+            <Text style={styles.title}>Đăng nhập</Text>
+            <View style={styles.form}>
+              {/* Username */}
+              <Controller
+                control={control}
+                name="username"
+                render={({field: {onChange, value}}) => (
+                  <RowComponent flexDirection="column" justify="flex-start" alignItems="flex-start">
+                    <TextComponent text="Số điện thoại" font={fontFamilies.bold} />
+                    <Space height={8} />
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Số điện thoại"
+                      placeholderTextColor="#888"
+                      autoCapitalize="none"
+                      keyboardType="numeric"
+                      value={value}
+                      onChangeText={onChange}
+                    />
+                  </RowComponent>
+                )}
+              />
+              {errors.username && <Text style={styles.error}>{errors.username.message}</Text>}
 
-        {/* Password */}
-        <Controller
-          control={control}
-          name="password"
-          render={({field: {onChange, value}}) => (
-            <TextInput
-              style={styles.input}
-              placeholder="Mật khẩu"
-              secureTextEntry
-              value={value}
-              onChangeText={onChange}
-            />
-          )}
-        />
-        {errors.password && <Text style={styles.error}>{errors.password.message}</Text>}
+              {/* Password */}
+              <Controller
+                control={control}
+                name="password"
+                render={({field: {onChange, value}}) => (
+                  <RowComponent flexDirection="column" justify="flex-start" alignItems="flex-start">
+                    <TextComponent text="Mật khẩu" font={fontFamilies.bold} />
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Mật khẩu"
+                      placeholderTextColor="#888"
+                      secureTextEntry
+                      value={value}
+                      onChangeText={onChange}
+                    />
+                  </RowComponent>
+                )}
+              />
+              {errors.password && <Text style={styles.error}>{errors.password.message}</Text>}
+              <View>
+                <ButtonComponent
+                  title={isPending ? 'Đang đăng nhập...' : 'Đăng nhập'}
+                  type="primary"
+                  onPress={handleSubmit(onSubmit)}
+                />
 
-        {/* Nút Đăng nhập */}
-        <ButtonComponent
-          title="Đăng nhập"
-          type="primary"
-          textStyle={{fontWeight: 'bold'}}
-          onPress={() => handleSubmit(onSubmit)}
-        />
-        <Space height={12} />
-        {/* Nút Đăng ký */}
-        <ButtonComponent
-          title="Đăng ký"
-          type="outline"
-          textStyle={{fontWeight: 'bold'}}
-          onPress={() => router.push(`/register`)}
-        />
-      </View>
-    </View>
+                <Space height={12} />
+
+                <ButtonComponent
+                  title="Đăng ký"
+                  type="outline"
+                  textStyle={{fontWeight: 'bold'}}
+                  onPress={() => router.push(`/register`)}
+                />
+              </View>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </TouchableWithoutFeedback>
+    </SafeAreaView>
   );
 };
 
@@ -94,21 +129,51 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: COLOR.GRAY2,
     padding: 16,
   },
-  title: {fontSize: 24, fontWeight: 'bold', marginBottom: 24},
-  form: {width: '100%', maxWidth: 350},
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 12,
-    fontSize: 16,
-    backgroundColor: '#f9f9f9',
+  inner: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
   },
-  error: {color: 'red', marginBottom: 8, fontSize: 14},
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: COLOR.PRIMARY,
+    letterSpacing: 1,
+    marginBottom: 12,
+  },
+  form: {
+    width: '100%',
+    maxWidth: 350,
+    borderRadius: 16,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    backgroundColor: COLOR.WHITE,
+  },
+  input: {
+    width: '100%',
+    borderWidth: 1,
+    borderColor: COLOR.GRAY3,
+    borderRadius: 10,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    marginBottom: 4,
+    fontSize: 16,
+    backgroundColor: '#f8fafc',
+    color: '#222',
+  },
+  error: {
+    color: '#ef4444',
+    marginBottom: 12,
+    fontSize: 14,
+    fontWeight: 'light',
+  },
   registerButton: {marginTop: 12, backgroundColor: 'red', alignItems: 'center', padding: 8},
   registerTitle: {color: COLOR.WHITE, fontWeight: 'bold', fontSize: 14},
 });

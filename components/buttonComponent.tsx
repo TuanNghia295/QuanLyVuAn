@@ -10,7 +10,7 @@ import {
   TouchableOpacity,
   ViewStyle,
 } from 'react-native';
-import TextComponent from './textComponent';
+import TextComponent from './TextComponent';
 
 type ButtonType =
   | 'primary'

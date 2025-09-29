@@ -1,4 +1,4 @@
-import RowComponent from '@/components/rowComponent';
+import RowComponent from '@/components/RowComponent';
 import {Ionicons} from '@expo/vector-icons';
 import React, {useEffect, useState} from 'react';
 import {
