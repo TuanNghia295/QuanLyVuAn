@@ -1,4 +1,4 @@
-import {refreshAccessToken} from '@/services/authServices';
+import AxiosClient from '@/api/axiosClient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {jwtDecode} from 'jwt-decode';
 import {create} from 'zustand';
@@ -74,19 +74,24 @@ export const useUserStore = create<UserState>((set, get) => ({
       console.log('⚠️ Không có refreshToken → không thể refresh');
       return false;
     }
-    const res = await refreshAccessToken(refresh);
-    if (res?.accessToken) {
-      await get().setAccessToken(res.accessToken);
-      if (res.refreshToken) {
-        await get().setRefreshToken(res.refreshToken);
+    try {
+      const res = await AxiosClient.post('api/v1/auth/refresh', {
+        refreshToken: refresh,
+      });
+      if (res?.accessToken) {
+        await get().setAccessToken(res.accessToken);
+        if (res.refreshToken) {
+          await get().setRefreshToken(res.refreshToken);
+        }
+        console.log('🔄 Refresh token thành công');
+        return true;
       }
-      console.log('🔄 Refresh token thành công');
-      return true;
+      return res;
+    } catch (error) {
+      console.log('❌ Refresh token thất bại', error);
+      await get().logout();
+      return false;
     }
-
-    console.log('❌ Refresh token thất bại');
-    await get().logout();
-    return false;
   },
 
   logout: async () => {

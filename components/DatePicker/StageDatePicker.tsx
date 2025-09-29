@@ -1,6 +1,6 @@
-import DateTimePicker from '@react-native-community/datetimepicker';
 import React, {useState} from 'react';
 import {Text, TouchableOpacity} from 'react-native';
+import DateTimePickerModal from 'react-native-modal-datetime-picker';
 
 type Props = {
   label: string;
@@ -29,14 +29,14 @@ export default function StageDatePicker({label, value, onChange}: Props) {
       </TouchableOpacity>
 
       {show && (
-        <DateTimePicker
-          value={dateValue}
+        <DateTimePickerModal
+          isVisible={show}
           mode="date"
-          display="default"
-          onChange={(event, selectedDate) => {
+          onConfirm={selectedDate => {
             setShow(false);
             if (selectedDate) onChange(selectedDate.toISOString());
           }}
+          onCancel={() => setShow(false)}
         />
       )}
     </>

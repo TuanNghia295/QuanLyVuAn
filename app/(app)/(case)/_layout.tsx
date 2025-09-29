@@ -11,11 +11,14 @@ const Layout = () => {
         headerTitleStyle: {fontSize: 24},
         headerStyle: {backgroundColor: COLOR.GRAY2},
         headerShadowVisible: false,
+        headerBackButtonDisplayMode: 'default',
+        headerBackVisible: true,
       }}>
       <Stack.Screen
         name="caseCreate"
         options={{
           title: 'Tạo vụ án',
+          headerBackVisible: true,
         }}
       />
       <Stack.Screen

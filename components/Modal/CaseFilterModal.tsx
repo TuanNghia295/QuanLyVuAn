@@ -1,9 +1,9 @@
 // CaseFilterModal.tsx
 import {COLOR} from '@/constants/color';
 import {Ionicons} from '@expo/vector-icons';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import React, {useState} from 'react';
-import {FlatList, Modal, Platform, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import {FlatList, Modal, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import DateTimePickerModal from 'react-native-modal-datetime-picker';
 
 interface CaseFilterModalProps {
   visible: boolean;
@@ -34,14 +34,12 @@ const CaseFilterModal: React.FC<CaseFilterModalProps> = ({
 }) => {
   const [showDatePicker, setShowDatePicker] = useState(false);
 
-  const handleDateChange = (event: any, selectedDate?: Date) => {
-    setShowDatePicker(Platform.OS === 'ios'); // iOS giữ picker mở
-    if (selectedDate) {
-      const yyyy = selectedDate.getFullYear();
-      const mm = String(selectedDate.getMonth() + 1).padStart(2, '0');
-      const dd = String(selectedDate.getDate()).padStart(2, '0');
-      setPendingDate(`${yyyy}-${mm}-${dd}`);
-    }
+  const handleDateConfirm = (selectedDate: Date) => {
+    const yyyy = selectedDate.getFullYear();
+    const mm = String(selectedDate.getMonth() + 1).padStart(2, '0');
+    const dd = String(selectedDate.getDate()).padStart(2, '0');
+    setPendingDate(`${yyyy}-${mm}-${dd}`);
+    setShowDatePicker(false);
   };
 
   return (
@@ -97,23 +95,21 @@ const CaseFilterModal: React.FC<CaseFilterModalProps> = ({
               <TouchableOpacity
                 style={{marginLeft: 8, padding: 6}}
                 onPress={() => setPendingDate('')}>
-                {/* Bạn có thể dùng Ionicons hoặc bất kỳ thư viện icon nào */}
                 <Ionicons name="close-circle" size={24} color="#ef4444" />
               </TouchableOpacity>
             ) : null}
           </View>
 
-          {showDatePicker && (
-            <DateTimePicker
-              value={pendingDate ? new Date(pendingDate) : new Date()}
-              mode="date"
-              display="default"
-              onChange={handleDateChange}
-              maximumDate={new Date(2100, 12, 31)}
-              minimumDate={new Date(2000, 0, 1)}
-            />
-          )}
+          <DateTimePickerModal
+            isVisible={showDatePicker}
+            mode="date"
+            onConfirm={handleDateConfirm}
+            onCancel={() => setShowDatePicker(false)}
+            maximumDate={new Date(2100, 11, 31)}
+            minimumDate={new Date(2000, 0, 1)}
+          />
 
+          {/* Buttons */}
           <View style={styles.buttonRow}>
             <TouchableOpacity style={styles.modalBtn} onPress={onCancel}>
               <Text style={{color: COLOR.PRIMARY, fontWeight: 'bold'}}>Hủy</Text>
@@ -143,8 +139,17 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
   },
-  modalTitle: {fontSize: 18, fontWeight: 'bold', marginBottom: 12, textAlign: 'center'},
-  filterLabel: {fontWeight: 'bold', color: COLOR.PRIMARY, marginVertical: 6},
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  filterLabel: {
+    fontWeight: 'bold',
+    color: COLOR.PRIMARY,
+    marginVertical: 6,
+  },
   filterBtn: {
     backgroundColor: '#e0e7ff',
     borderRadius: 8,
@@ -165,7 +170,11 @@ const styles = StyleSheet.create({
     marginTop: 6,
     backgroundColor: '#f8fafc',
   },
-  buttonRow: {flexDirection: 'row', justifyContent: 'space-between', marginTop: 18},
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 18,
+  },
   modalBtn: {
     paddingVertical: 10,
     paddingHorizontal: 24,

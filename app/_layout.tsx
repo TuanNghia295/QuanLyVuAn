@@ -1,4 +1,6 @@
+import DefaultModal from '@/components/Modal/DefaultModal';
 import {useColorScheme} from '@/hooks/use-color-scheme';
+import {useModalStore} from '@/store/useModalStore';
 import {useUserStore} from '@/store/userStore';
 import {DefaultTheme, ThemeProvider} from '@react-navigation/native';
 import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
@@ -16,6 +18,7 @@ SplashScreen.preventAutoHideAsync();
 const queryClient = new QueryClient();
 
 export default function RootLayout() {
+  const {visible, message, hideModal} = useModalStore();
   const router = useRouter();
   const colorScheme = useColorScheme();
   const {loadToken, checkToken} = useUserStore();
@@ -60,6 +63,7 @@ export default function RootLayout() {
         <Stack screenOptions={{headerShown: false}}>
           <Stack.Screen name="(app)/(tabs)" />
         </Stack>
+        <DefaultModal visible={visible} title="Thông báo" message={message} onClose={hideModal} />
         <StatusBar style="dark" />
       </ThemeProvider>
     </QueryClientProvider>

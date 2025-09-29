@@ -4,6 +4,14 @@ type loginProps = {
   username: string;
   password: string;
 };
+
+type registerProps = {
+  fullName: string;
+  phone: string;
+  password: string;
+  referralCode: string;
+};
+
 // Api đăng nhập
 export const login = async (values: loginProps) => {
   const res = await AxiosClient.post('api/v1/auth/login', values);
@@ -16,15 +24,8 @@ export const logout = async () => {
   return res;
 };
 
-// Api RefreshToken
-export const refreshAccessToken = async (refreshToken: string) => {
-  try {
-    const res = await AxiosClient.post('api/v1/auth/refresh', {
-      refreshToken,
-    });
-    return res;
-  } catch (error) {
-    console.log('❌ Refresh token failed', error);
-    return null;
-  }
+// Api đăng ký
+export const register = async (data: registerProps) => {
+  const res = await AxiosClient.post('api/v1/auth/register', data);
+  return res;
 };

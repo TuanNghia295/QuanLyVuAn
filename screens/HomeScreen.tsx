@@ -1,5 +1,6 @@
 import {Ionicons} from '@expo/vector-icons';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import DateTimePickerModal from 'react-native-modal-datetime-picker';
+
 import {useRouter} from 'expo-router';
 import React, {useState} from 'react';
 import {
@@ -16,7 +17,7 @@ import {PieChart} from 'react-native-chart-kit';
 
 import ButtonComponent from '@/components/buttonComponent';
 import CaseFilterModal from '@/components/Modal/CaseFilterModal';
-import RowComponent from '@/components/RowComponent';
+import RowComponent from '@/components/rowComponent';
 import {COLOR} from '@/constants/color';
 
 // Mock: role hiện tại
@@ -152,11 +153,15 @@ const HomeScreen = () => {
         </TouchableOpacity>
 
         {showPicker && (
-          <DateTimePicker
-            value={new Date(selectedYear, selectedMonth - 1, 1)}
+          <DateTimePickerModal
+            isVisible={showPicker}
             mode="date"
-            display="calendar"
-            onChange={handleDateChange}
+            onConfirm={date => {
+              setSelectedMonth(date.getMonth() + 1);
+              setSelectedYear(date.getFullYear());
+              setShowPicker(false);
+            }}
+            onCancel={() => setShowPicker(false)}
           />
         )}
 
@@ -329,12 +334,6 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     paddingVertical: 16,
     paddingHorizontal: 8,
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    borderWidth: 1,
-    borderColor: '#e0e7ff',
     alignItems: 'center',
   },
   monthCenterWrap: {
