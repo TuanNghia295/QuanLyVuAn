@@ -2,7 +2,7 @@ import {Ionicons} from '@expo/vector-icons';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 
 import {useRouter} from 'expo-router';
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   Dimensions,
   FlatList,
@@ -16,16 +16,12 @@ import {
 import {PieChart} from 'react-native-chart-kit';
 
 import ButtonComponent from '@/components/buttonComponent';
+import LoadingComponent from '@/components/LoadingComponent';
 import CaseFilterModal from '@/components/Modal/CaseFilterModal';
 import RowComponent from '@/components/rowComponent';
 import {COLOR} from '@/constants/color';
-
-// Mock: role hiện tại
-const currentUser = {
-  id: '1',
-  name: 'Nguyen Van A',
-  role: 'admin', // hoặc 'user'
-};
+import {useUserInfo} from '@/hooks/useUser';
+import {useUserStore} from '@/store/userStore';
 
 // Mock thống kê theo tháng
 const mockStatsByMonth: Record<string, {open: number; closed: number; expiring: number}> = {
@@ -78,9 +74,12 @@ const mockRecentCases = [
   },
 ];
 
-const HomeScreen = () => {
+const HomeScreen = (): React.ReactNode => {
   const router = useRouter();
-  const isAdmin = currentUser.role === 'admin';
+  const {userInfo, setUserInfo} = useUserStore();
+  const {data: userInfor, isFetching: loadingUserInfo, isSuccess} = useUserInfo();
+
+  const isAdmin = userInfo?.role;
 
   // State filter thống kê theo tháng/năm
   const now = new Date();
@@ -103,7 +102,7 @@ const HomeScreen = () => {
   // Lọc danh sách vụ án
   const filteredCases = mockRecentCases.filter(
     c =>
-      (isAdmin || c.officer.id === currentUser.id) &&
+      (isAdmin || c.officer.id === userInfo?.id) &&
       (!typeFilter || c.type === typeFilter) &&
       (!statusFilter || c.status === statusFilter) &&
       (!dateFilter || c.decisionDate === dateFilter) &&
@@ -138,8 +137,15 @@ const HomeScreen = () => {
     }
   };
 
+  useEffect(() => {
+    if (isSuccess) {
+      setUserInfo(userInfor);
+    }
+  }, [isSuccess]);
+
   return (
     <ScrollView style={{flex: 1}}>
+      {loadingUserInfo && <LoadingComponent />}
       <Text style={styles.title}>Quản lý vụ án</Text>
 
       {/* Bộ lọc tháng/năm cho PieChart */}

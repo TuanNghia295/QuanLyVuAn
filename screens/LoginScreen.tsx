@@ -72,7 +72,7 @@ const LoginScreen = () => {
                       placeholder="Số điện thoại"
                       placeholderTextColor="#888"
                       autoCapitalize="none"
-                      keyboardType="numeric"
+                      // keyboardType="numeric"
                       value={value}
                       onChangeText={onChange}
                     />

@@ -1,22 +1,23 @@
 import {login, logout, register} from '@/services/authServices';
 import {useModalStore} from '@/store/useModalStore';
 import {useUserStore} from '@/store/userStore';
-import {useMutation} from '@tanstack/react-query';
+import {useMutation, useQueryClient} from '@tanstack/react-query';
 import {useRouter} from 'expo-router';
 
 export function useLogin() {
   const {setUserInfo, setAccessToken} = useUserStore();
   const router = useRouter();
   const {showModal} = useModalStore();
+  const queryClient = useQueryClient();
   return useMutation({
     mutationKey: ['login'],
     mutationFn: login,
-    onSuccess: (data: any) => {
-      console.log('data', data);
-
+    onSuccess: async (data: any) => {
       if (data?.accessToken) {
-        setUserInfo(data);
         setAccessToken(data.accessToken);
+        // refetch thông tin user
+        await queryClient.invalidateQueries({queryKey: ['userInfo']});
+
         router.replace('/(app)/(tabs)');
       } else {
         console.log('Login response missing accessToken', data);
@@ -76,14 +77,13 @@ export function useRegister() {
 export function useLogout() {
   const router = useRouter();
   const {setUserInfo, setAccessToken} = useUserStore();
-
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: logout,
     onSuccess: async () => {
       setUserInfo(null);
       setAccessToken(null);
-      // await AsyncStorage.removeItem('accessToken');
-      console.log('Log out successfully');
+      queryClient.clear(); // xóa toàn bộ cache cũ
       router.dismissAll();
       router.replace('/(auth)/login');
     },

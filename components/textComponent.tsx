@@ -23,6 +23,7 @@ interface TextComponentProps {
   styles?: StyleProp<TextStyle>; // ✅ chỉ nhận TextStyle
   onPress?: (event: GestureResponderEvent) => void;
   required?: boolean;
+  numberOfLine?: number;
 }
 
 const TextComponent: React.FC<TextComponentProps> = ({
@@ -35,6 +36,7 @@ const TextComponent: React.FC<TextComponentProps> = ({
   styles,
   onPress,
   required,
+  numberOfLine,
 }) => {
   const fontSizeDefault = Platform.OS === 'ios' ? 14 : 16;
 
@@ -50,6 +52,7 @@ const TextComponent: React.FC<TextComponentProps> = ({
           },
           styles,
         ]}
+        numberOfLines={numberOfLine}
         onPress={onPress}>
         {text}
         <Space width={4} />

@@ -1,34 +1,39 @@
 import LoadingComponent from '@/components/LoadingComponent';
+import RowComponent from '@/components/rowComponent';
+import TextComponent from '@/components/textComponent';
 import {COLOR} from '@/constants/color';
 import {useLogout} from '@/hooks/useAuth';
+import {useUserStore} from '@/store/userStore';
 import {yupResolver} from '@hookform/resolvers/yup';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 import React, {useState} from 'react';
 import {Controller, useForm} from 'react-hook-form';
 import {
   Alert,
   Image,
+  Keyboard,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   StyleSheet,
-  Text,
   TextInput,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   View,
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import * as yup from 'yup';
 
-// Mock: current user
-const currentUser = {
-  id: '1',
-  name: 'Nguyen Van A',
-  email: 'admin@example.com',
-  phone: '0912345678',
-  role: 'admin',
-  status: 'active',
-};
+const ProfileScreen = (): React.ReactNode => {
+  const {userInfo} = useUserStore();
+  console.log('userInfo', JSON.stringify(userInfo, null, 2));
+  const a = async (): Promise<void> => {
+    const b = await AsyncStorage.getItem('user-storage');
+    console.log(b);
+  };
+  a();
 
-const ProfileScreen = () => {
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
   const [referralCode, setReferralCode] = useState<string | null>(null);
   const [editModalVisible, setEditModalVisible] = useState(false);
@@ -36,7 +41,7 @@ const ProfileScreen = () => {
 
   // Validation schema
   const schema = yup.object().shape({
-    name: yup.string().required('Vui lòng nhập họ và tên'),
+    fullName: yup.string().required('Vui lòng nhập họ và tên'),
     phone: yup
       .string()
       .required('Vui lòng nhập số điện thoại')
@@ -51,8 +56,8 @@ const ProfileScreen = () => {
     reset,
   } = useForm({
     defaultValues: {
-      name: currentUser.name,
-      phone: currentUser.phone,
+      fullName: userInfo?.fullName,
+      phone: userInfo?.phone,
       password: '',
     },
     resolver: yupResolver(schema),
@@ -75,18 +80,16 @@ const ProfileScreen = () => {
   };
 
   const handlePickAvatar = async () => {
-    // xin quyền
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permissionResult.granted) {
       Alert.alert('Quyền bị từ chối', 'Bạn cần cấp quyền để chọn ảnh đại diện.');
       return;
     }
 
-    // mở thư viện ảnh
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images', 'livePhotos'],
-      allowsEditing: true, // cho phép crop
-      aspect: [1, 1], // crop hình vuông
+      allowsEditing: true,
+      aspect: [1, 1],
       quality: 1,
     });
 
@@ -98,127 +101,257 @@ const ProfileScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.card}>
+        {/* Avatar */}
         <View style={styles.avatarBox}>
-          <TouchableOpacity onPress={handlePickAvatar}>
-            {avatarUri ? (
-              <Image source={{uri: avatarUri}} style={styles.avatarImage} />
-            ) : (
-              <View style={styles.avatarCircle}>
-                <Text style={styles.avatarText}>{currentUser.name.charAt(0)}</Text>
-              </View>
-            )}
-          </TouchableOpacity>
-          <Text style={styles.avatarHint}>Nhấn để đổi ảnh đại diện</Text>
+          {avatarUri ? (
+            <Image source={{uri: avatarUri}} style={styles.avatarImage} />
+          ) : (
+            <View style={styles.avatarCircle}>
+              <TextComponent
+                text={userInfo?.fullName?.charAt(0) ?? ''}
+                size={32}
+                color={COLOR.BLUE}
+                styles={{fontWeight: 'bold'}}
+              />
+            </View>
+          )}
         </View>
 
-        <Text style={styles.title}>Thông tin cá nhân</Text>
-        <View style={styles.infoRow}>
-          <Text style={styles.label}>Tên:</Text>
-          <Text style={styles.value}>{currentUser.name}</Text>
-        </View>
-        <View style={styles.infoRow}>
-          <Text style={styles.label}>Số điện thoại:</Text>
-          <Text style={styles.value}>{currentUser.phone || '-'}</Text>
-        </View>
-        <View style={styles.infoRow}>
-          <Text style={styles.label}>Email:</Text>
-          <Text style={styles.value}>{currentUser.email}</Text>
-        </View>
-        <View style={styles.infoRow}>
-          <Text style={styles.label}>Vai trò:</Text>
-          <Text style={styles.value}>{currentUser.role === 'admin' ? 'Admin' : 'Người dùng'}</Text>
-        </View>
-        <View style={styles.infoRow}>
-          <Text style={styles.label}>Trạng thái:</Text>
-          <Text
-            style={[styles.value, currentUser.status === 'active' ? styles.active : styles.locked]}>
-            {currentUser.status === 'active' ? 'Hoạt động' : 'Khóa'}
-          </Text>
-        </View>
+        {/* Tiêu đề */}
+        <TextComponent
+          text="Thông tin cá nhân"
+          title
+          size={22}
+          color={COLOR.BLUE}
+          styles={{marginBottom: 18, textAlign: 'center'}}
+        />
 
-        {currentUser.role === 'admin' && (
+        {/* Họ và tên */}
+        <RowComponent justify="space-between" wrap="wrap">
+          <TextComponent
+            text="Họ và tên:"
+            styles={{fontWeight: '600', color: '#64748b', fontSize: 16}}
+          />
+          <TextComponent
+            text={userInfo?.fullName}
+            numberOfLine={2}
+            styles={{color: '#334155', fontWeight: '500'}}
+          />
+        </RowComponent>
+
+        {/* Số điện thoại */}
+        <RowComponent justify="space-between" wrap="wrap">
+          <TextComponent
+            text="Số điện thoại:"
+            styles={{fontWeight: '600', color: '#64748b', fontSize: 16, minWidth: 110}}
+          />
+          <TextComponent
+            text={userInfo?.phone ?? '-'}
+            numberOfLine={1}
+            styles={{color: '#334155', fontWeight: '500'}}
+          />
+        </RowComponent>
+
+        {/* Vai trò */}
+        <RowComponent justify="space-between" wrap="wrap">
+          <TextComponent
+            text="Vai trò:"
+            styles={{fontWeight: '600', color: '#64748b', fontSize: 16, minWidth: 110}}
+          />
+          <TextComponent
+            text={userInfo?.role === 'admin' ? 'Admin' : 'Người dùng'}
+            numberOfLine={1}
+            styles={{color: '#334155', fontWeight: '500'}}
+          />
+        </RowComponent>
+
+        {/* Trạng thái */}
+        <RowComponent justify="space-between" wrap="wrap">
+          <TextComponent
+            text="Trạng thái:"
+            styles={{fontWeight: '600', color: '#64748b', fontSize: 16, minWidth: 110}}
+          />
+          <TextComponent
+            text={userInfo?.status === 'active' ? 'Hoạt động' : 'Khóa'}
+            numberOfLine={1}
+            styles={{
+              fontWeight: 'bold',
+              color: userInfo?.status === 'active' ? COLOR.GREEN : COLOR.PRIMARY,
+            }}
+          />
+        </RowComponent>
+
+        {/* Tạo mã giới thiệu */}
+        {userInfo?.role === 'admin' && (
           <TouchableOpacity style={styles.button} onPress={handleCreateReferral}>
-            <Text style={styles.buttonText}>Tạo mã giới thiệu</Text>
+            <TextComponent
+              text="Tạo mã giới thiệu"
+              color="#fff"
+              styles={{fontWeight: 'bold', fontSize: 16}}
+            />
           </TouchableOpacity>
         )}
-        {currentUser.role === 'admin' && (
+        {userInfo?.role === 'admin' && referralCode && (
           <View style={styles.referralBox}>
-            <Text style={styles.referralText}>Mã giới thiệu: {referralCode}</Text>
+            <TextComponent
+              text={`Mã giới thiệu: ${referralCode}`}
+              color={COLOR.BLUE}
+              styles={{fontWeight: 'bold', fontSize: 16}}
+            />
           </View>
         )}
+
+        {/* Nút chỉnh sửa */}
         <TouchableOpacity style={styles.editButton} onPress={() => setEditModalVisible(true)}>
-          <Text style={styles.editText}>Chỉnh sửa thông tin</Text>
+          <TextComponent
+            text="Chỉnh sửa thông tin"
+            color={COLOR.BLUE}
+            styles={{fontWeight: 'bold', fontSize: 16}}
+          />
         </TouchableOpacity>
+
+        {/* Nút đăng xuất */}
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-          <Text style={styles.logoutText}>Đăng xuất</Text>
+          <TextComponent
+            text="Đăng xuất"
+            color="#fff"
+            styles={{fontWeight: 'bold', fontSize: 16, letterSpacing: 1}}
+          />
         </TouchableOpacity>
       </View>
 
       {isLoggingOut && <LoadingComponent />}
 
-      {/* Edit Modal */}
+      {/* Modal chỉnh sửa */}
       <Modal
         visible={editModalVisible}
         animationType="slide"
         transparent
         onRequestClose={() => setEditModalVisible(false)}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Chỉnh sửa thông tin</Text>
-            <Controller
-              control={control}
-              name="name"
-              render={({field: {onChange, value}}) => (
-                <TextInput
-                  style={styles.input}
-                  placeholder="Họ và tên"
-                  value={value}
-                  onChangeText={onChange}
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <View style={styles.modalOverlay}>
+            <KeyboardAvoidingView
+              style={{width: '100%', justifyContent: 'center', alignItems: 'center'}}
+              behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+              <View style={styles.modalContent}>
+                <TextComponent
+                  text="Chỉnh sửa thông tin"
+                  title
+                  size={20}
+                  color={COLOR.PRIMARY}
+                  styles={{marginBottom: 18, textAlign: 'center'}}
                 />
-              )}
-            />
-            {errors.name && <Text style={styles.errorText}>{errors.name.message}</Text>}
-            <Controller
-              control={control}
-              name="phone"
-              render={({field: {onChange, value}}) => (
-                <TextInput
-                  style={styles.input}
-                  placeholder="Số điện thoại"
-                  value={value}
-                  onChangeText={onChange}
-                  keyboardType="phone-pad"
-                />
-              )}
-            />
-            {errors.phone && <Text style={styles.errorText}>{errors.phone.message}</Text>}
-            <Controller
-              control={control}
-              name="password"
-              render={({field: {onChange, value}}) => (
-                <TextInput
-                  style={styles.input}
-                  placeholder="Mật khẩu mới"
-                  value={value}
-                  onChangeText={onChange}
-                  secureTextEntry
-                />
-              )}
-            />
-            {errors.password && <Text style={styles.errorText}>{errors.password.message}</Text>}
-            <View style={styles.modalActions}>
-              <TouchableOpacity style={styles.saveButton} onPress={handleSubmit(handleEditSave)}>
-                <Text style={styles.saveText}>Lưu</Text>
-              </TouchableOpacity>
 
-              <TouchableOpacity
-                style={styles.cancelButton}
-                onPress={() => setEditModalVisible(false)}>
-                <Text style={styles.cancelText}>Hủy</Text>
-              </TouchableOpacity>
-            </View>
+                {/* Họ và tên */}
+                <TextComponent
+                  text="Họ và tên"
+                  required
+                  styles={{fontWeight: '600', fontSize: 14, marginBottom: 4}}
+                />
+                <Controller
+                  control={control}
+                  name="fullName"
+                  render={({field: {onChange, value}}) => (
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Nhập họ và tên"
+                      value={value ?? ''}
+                      onChangeText={onChange}
+                      placeholderTextColor={COLOR.GRAY3}
+                    />
+                  )}
+                />
+                {errors.fullName && (
+                  <TextComponent
+                    text={errors.fullName.message as string}
+                    color={COLOR.PRIMARY}
+                    size={13}
+                    styles={{marginBottom: 8, marginLeft: 4}}
+                  />
+                )}
+
+                {/* Số điện thoại */}
+                <TextComponent
+                  text="Số điện thoại"
+                  required
+                  styles={{fontWeight: '600', fontSize: 14, marginBottom: 4}}
+                />
+                <Controller
+                  control={control}
+                  name="phone"
+                  render={({field: {onChange, value}}) => (
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Nhập số điện thoại"
+                      value={value ?? ''}
+                      onChangeText={onChange}
+                      keyboardType="phone-pad"
+                      placeholderTextColor={COLOR.GRAY3}
+                    />
+                  )}
+                />
+                {errors.phone && (
+                  <TextComponent
+                    text={errors.phone.message as string}
+                    color={COLOR.PRIMARY}
+                    size={13}
+                    styles={{marginBottom: 8, marginLeft: 4}}
+                  />
+                )}
+
+                {/* Mật khẩu */}
+                <TextComponent
+                  text="Mật khẩu mới"
+                  styles={{fontWeight: '600', fontSize: 14, marginBottom: 4}}
+                />
+                <Controller
+                  control={control}
+                  name="password"
+                  render={({field: {onChange, value}}) => (
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Nhập mật khẩu mới"
+                      value={value ?? ''}
+                      onChangeText={onChange}
+                      secureTextEntry
+                      placeholderTextColor={COLOR.GRAY3}
+                    />
+                  )}
+                />
+                {errors.password && (
+                  <TextComponent
+                    text={errors.password.message as string}
+                    color={COLOR.PRIMARY}
+                    size={13}
+                    styles={{marginBottom: 8, marginLeft: 4}}
+                  />
+                )}
+
+                <RowComponent justify="space-between" styles={{marginTop: 8}}>
+                  <TouchableOpacity
+                    style={styles.cancelButton}
+                    onPress={() => setEditModalVisible(false)}>
+                    <TextComponent
+                      text="Hủy"
+                      color="#64748b"
+                      styles={{fontWeight: 'bold', fontSize: 16}}
+                    />
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.saveButton}
+                    onPress={handleSubmit(handleEditSave)}>
+                    <TextComponent
+                      text="Lưu"
+                      color="#fff"
+                      styles={{fontWeight: 'bold', fontSize: 16}}
+                    />
+                  </TouchableOpacity>
+                </RowComponent>
+              </View>
+            </KeyboardAvoidingView>
           </View>
-        </View>
+        </TouchableWithoutFeedback>
       </Modal>
     </SafeAreaView>
   );
@@ -240,18 +373,6 @@ const styles = StyleSheet.create({
     maxWidth: 400,
     elevation: 4,
   },
-  title: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginBottom: 18,
-    color: COLOR.BLUE,
-    textAlign: 'center',
-  },
-  infoRow: {flexDirection: 'row', marginBottom: 10, alignItems: 'center'},
-  label: {width: 90, fontWeight: '600', color: '#64748b', fontSize: 16},
-  value: {flex: 1, fontSize: 16, color: '#334155', fontWeight: '500'},
-  active: {color: COLOR.GREEN, fontWeight: 'bold'},
-  locked: {color: COLOR.PRIMARY, fontWeight: 'bold'},
   avatarBox: {alignItems: 'center', marginBottom: 12},
   avatarCircle: {
     width: 72,
@@ -261,9 +382,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  avatarText: {fontSize: 32, color: COLOR.BLUE, fontWeight: 'bold'},
   avatarImage: {width: 72, height: 72, borderRadius: 36},
-  avatarHint: {marginTop: 6, fontSize: 12, color: '#64748b'},
   button: {
     marginTop: 18,
     backgroundColor: COLOR.BLUE,
@@ -271,7 +390,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     alignItems: 'center',
   },
-  buttonText: {color: '#fff', fontWeight: 'bold', fontSize: 16},
   logoutButton: {
     marginTop: 18,
     backgroundColor: COLOR.PRIMARY,
@@ -279,7 +397,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     alignItems: 'center',
   },
-  logoutText: {color: '#fff', fontWeight: 'bold', fontSize: 16, letterSpacing: 1},
   referralBox: {
     marginTop: 16,
     backgroundColor: '#e0f2fe',
@@ -287,7 +404,6 @@ const styles = StyleSheet.create({
     padding: 12,
     alignItems: 'center',
   },
-  referralText: {color: COLOR.BLUE, fontWeight: 'bold', fontSize: 16},
   editButton: {
     marginTop: 18,
     backgroundColor: '#f1f5f9',
@@ -297,7 +413,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLOR.BLUE,
   },
-  editText: {color: COLOR.BLUE, fontWeight: 'bold', fontSize: 16},
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.2)',
@@ -312,13 +427,6 @@ const styles = StyleSheet.create({
     maxWidth: 350,
     elevation: 6,
   },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: COLOR.BLUE,
-    marginBottom: 18,
-    textAlign: 'center',
-  },
   input: {
     borderWidth: 1,
     borderColor: '#cbd5e1',
@@ -328,15 +436,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     backgroundColor: '#f8fafc',
   },
-  modalActions: {flexDirection: 'row', justifyContent: 'space-between', marginTop: 8},
   saveButton: {
-    backgroundColor: COLOR.BLUE,
+    backgroundColor: COLOR.PRIMARY,
     borderRadius: 8,
     paddingVertical: 10,
     paddingHorizontal: 24,
     alignItems: 'center',
   },
-  saveText: {color: '#fff', fontWeight: 'bold', fontSize: 16},
   cancelButton: {
     backgroundColor: '#f1f5f9',
     borderRadius: 8,
@@ -345,13 +451,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: '#64748b',
-  },
-  cancelText: {color: '#64748b', fontWeight: 'bold', fontSize: 16},
-  errorText: {
-    color: COLOR.PRIMARY,
-    fontSize: 13,
-    marginBottom: 8,
-    marginLeft: 4,
   },
 });
 
