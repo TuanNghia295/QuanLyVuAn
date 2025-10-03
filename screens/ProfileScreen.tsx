@@ -3,9 +3,10 @@ import RowComponent from '@/components/rowComponent';
 import TextComponent from '@/components/textComponent';
 import {COLOR} from '@/constants/color';
 import {useLogout} from '@/hooks/useAuth';
+import {useCreateInviteCode, useGetInviteCode, useUpdateUserInfo} from '@/hooks/useUser';
 import {useUserStore} from '@/store/userStore';
 import {yupResolver} from '@hookform/resolvers/yup';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Clipboard from 'expo-clipboard';
 import * as ImagePicker from 'expo-image-picker';
 import React, {useState} from 'react';
 import {Controller, useForm} from 'react-hook-form';
@@ -27,17 +28,13 @@ import * as yup from 'yup';
 
 const ProfileScreen = (): React.ReactNode => {
   const {userInfo} = useUserStore();
-  console.log('userInfo', JSON.stringify(userInfo, null, 2));
-  const a = async (): Promise<void> => {
-    const b = await AsyncStorage.getItem('user-storage');
-    console.log(b);
-  };
-  a();
-
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
   const [referralCode, setReferralCode] = useState<string | null>(null);
   const [editModalVisible, setEditModalVisible] = useState(false);
   const {mutate: onLogOut, isPending: isLoggingOut} = useLogout();
+  const {mutate: onUpdateUser, isPending} = useUpdateUserInfo(setEditModalVisible);
+  const {mutate: onCreateInviteCode, data: inviteCode} = useCreateInviteCode();
+  const {data: getInviteCode, refetch: refetchGetInviteCode} = useGetInviteCode();
 
   // Validation schema
   const schema = yup.object().shape({
@@ -64,15 +61,16 @@ const ProfileScreen = (): React.ReactNode => {
   });
 
   const handleEditSave = (data: any) => {
-    Alert.alert('Cập nhật', 'Thông tin đã được lưu (mock)!');
-    setEditModalVisible(false);
+    onUpdateUser({
+      ...data,
+      userId: userInfo?.id,
+    });
     reset();
   };
 
   const handleCreateReferral = () => {
-    const code = 'REF' + Math.floor(100000 + Math.random() * 900000);
-    setReferralCode(code);
-    Alert.alert('Mã giới thiệu', `Mã của bạn: ${code}`);
+    onCreateInviteCode();
+    setReferralCode(inviteCode?.code);
   };
 
   const handleLogout = async () => {
@@ -98,6 +96,10 @@ const ProfileScreen = (): React.ReactNode => {
     }
   };
 
+  const handleCopyCode = (code: string) => {
+    Clipboard.setStringAsync(code);
+    Alert.alert('Đã sao chép', `Mã giới thiệu đã được lưu vào clipboard`);
+  };
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.card}>
@@ -185,20 +187,31 @@ const ProfileScreen = (): React.ReactNode => {
         {userInfo?.role === 'admin' && (
           <TouchableOpacity style={styles.button} onPress={handleCreateReferral}>
             <TextComponent
-              text="Tạo mã giới thiệu"
+              text={getInviteCode?.code ? 'Tạo mã giới thiệu mới' : 'Tạo mã giới thiệu'}
               color="#fff"
               styles={{fontWeight: 'bold', fontSize: 16}}
             />
           </TouchableOpacity>
         )}
-        {userInfo?.role === 'admin' && referralCode && (
-          <View style={styles.referralBox}>
+
+        {userInfo?.role === 'admin' && getInviteCode?.code && (
+          <RowComponent styles={styles.referralBox} justify="space-between">
             <TextComponent
-              text={`Mã giới thiệu: ${referralCode}`}
+              text={`Mã: ${getInviteCode.code}`}
               color={COLOR.BLUE}
               styles={{fontWeight: 'bold', fontSize: 16}}
             />
-          </View>
+
+            <TouchableOpacity
+              style={styles.copyButton}
+              onPress={() => handleCopyCode(getInviteCode.code)}>
+              <TextComponent
+                text="Sao chép"
+                color={COLOR.GRAY5}
+                styles={{fontWeight: '600', fontSize: 14}}
+              />
+            </TouchableOpacity>
+          </RowComponent>
         )}
 
         {/* Nút chỉnh sửa */}
@@ -404,6 +417,8 @@ const styles = StyleSheet.create({
     padding: 12,
     alignItems: 'center',
   },
+  copyButton: {},
+
   editButton: {
     marginTop: 18,
     backgroundColor: '#f1f5f9',

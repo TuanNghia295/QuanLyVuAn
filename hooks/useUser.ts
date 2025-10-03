@@ -1,6 +1,6 @@
-import {userInfo} from '@/services/userServices';
+import {createInviteCode, getInviteCode, updateUserInfo, userInfo} from '@/services/userServices';
 import {useUserStore} from '@/store/userStore';
-import {useQuery} from '@tanstack/react-query';
+import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
 // Thông tin tài khoản
 export function useUserInfo() {
@@ -11,5 +11,48 @@ export function useUserInfo() {
     enabled: !!accessToken, // chỉ gọi hàm khi có token
     staleTime: 5 * 60 * 1000, // Giữ cache 5 phút
     refetchOnMount: true,
+  });
+}
+
+// Sửa thông tin tài khoản
+export function useUpdateUserInfo(setEditModalVisible?: (v: boolean) => void) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationKey: ['userInfo'],
+    mutationFn: updateUserInfo,
+    onSuccess: e => {
+      queryClient.invalidateQueries({queryKey: ['userInfo']});
+      console.log('update user sucessfully', e);
+      if (setEditModalVisible) setEditModalVisible(false); // đóng modal ngay khi thành công
+    },
+    onError: e => {
+      console.log('update user failed', e);
+    },
+  });
+}
+
+// Tạo mã giới thiệu
+export function useCreateInviteCode() {
+  const {refetch: refetchGetInviteCode} = useGetInviteCode();
+  return useMutation({
+    mutationKey: ['inviteCode'],
+    mutationFn: createInviteCode,
+    onSuccess: data => {
+      // console.log('random successfully', data);
+      refetchGetInviteCode();
+    },
+    onError: e => {
+      console.log('random invite code failed', e);
+    },
+  });
+}
+
+// Lấy mã giới thiệu
+export function useGetInviteCode() {
+  const {accessToken} = useUserStore();
+  return useQuery({
+    queryKey: ['inviteCode'],
+    queryFn: getInviteCode,
+    enabled: !!accessToken,
   });
 }
