@@ -3,8 +3,12 @@ import RowComponent from '@/components/rowComponent';
 import TextComponent from '@/components/textComponent';
 import {COLOR} from '@/constants/color';
 import {useLogout} from '@/hooks/useAuth';
-import {useCreateInviteCode, useGetInviteCode, useUpdateUserInfo} from '@/hooks/useUser';
-import {useUserStore} from '@/store/userStore';
+import {
+  useCreateInviteCode,
+  useGetInviteCode,
+  useUpdateUserInfo,
+  useUserInfo,
+} from '@/hooks/useUser';
 import {yupResolver} from '@hookform/resolvers/yup';
 import * as Clipboard from 'expo-clipboard';
 import * as ImagePicker from 'expo-image-picker';
@@ -27,7 +31,7 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 import * as yup from 'yup';
 
 const ProfileScreen = (): React.ReactNode => {
-  const {userInfo} = useUserStore();
+  const {data: userInfo} = useUserInfo();
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
   const [referralCode, setReferralCode] = useState<string | null>(null);
   const [editModalVisible, setEditModalVisible] = useState(false);
@@ -43,7 +47,10 @@ const ProfileScreen = (): React.ReactNode => {
       .string()
       .required('Vui lòng nhập số điện thoại')
       .matches(/^0\d{9,10}$/, 'Số điện thoại không hợp lệ'),
-    password: yup.string().min(6, 'Mật khẩu ít nhất 6 ký tự'),
+    password: yup
+      .string()
+      .notRequired()
+      .test('len', 'Mật khẩu ít nhất 6 ký tự', val => !val || val.length >= 6),
   });
 
   const {

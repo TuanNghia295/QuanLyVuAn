@@ -213,6 +213,7 @@ const HomeScreen = (): React.ReactNode => {
             placeholder="Tìm kiếm số vụ án / tên vụ án"
             value={search}
             onChangeText={setSearch}
+            placeholderTextColor={COLOR.GRAY4}
           />
           <TouchableOpacity
             style={styles.filterIconBtn}

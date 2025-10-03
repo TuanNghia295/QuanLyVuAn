@@ -11,18 +11,21 @@ export function useUserInfo() {
     enabled: !!accessToken, // chỉ gọi hàm khi có token
     staleTime: 5 * 60 * 1000, // Giữ cache 5 phút
     refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
 }
 
 // Sửa thông tin tài khoản
 export function useUpdateUserInfo(setEditModalVisible?: (v: boolean) => void) {
   const queryClient = useQueryClient();
+  const {refetch: refetchUserInfo} = useUserInfo();
   return useMutation({
     mutationKey: ['userInfo'],
     mutationFn: updateUserInfo,
     onSuccess: e => {
       queryClient.invalidateQueries({queryKey: ['userInfo']});
       console.log('update user sucessfully', e);
+      refetchUserInfo();
       if (setEditModalVisible) setEditModalVisible(false); // đóng modal ngay khi thành công
     },
     onError: e => {
