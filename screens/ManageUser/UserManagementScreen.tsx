@@ -1,5 +1,6 @@
 import ButtonComponent from '@/components/buttonComponent';
 import {COLOR} from '@/constants/color';
+import {useGetUserList} from '@/hooks/useUser';
 import {Ionicons} from '@expo/vector-icons';
 import React, {useState} from 'react';
 import {FlatList, Modal, StyleSheet, Text, TextInput, TouchableOpacity, View} from 'react-native';
@@ -15,49 +16,20 @@ type User = {
   password: string;
 };
 
-// Mock data
-const mockUsers: User[] = [
-  {
-    id: '1',
-    name: 'Nguyen Van A',
-    phone: '0901234567',
-    createdAt: '2025-09-20',
-    caseCount: 5,
-    role: 'admin',
-    status: 'active',
-    password: 'admin123',
-  },
-  {
-    id: '2',
-    name: 'Tran Thi B',
-    phone: '0912345678',
-    createdAt: '2025-09-18',
-    caseCount: 2,
-    role: 'user',
-    status: 'active',
-    password: 'user123',
-  },
-  {
-    id: '3',
-    name: 'Le Van C',
-    phone: '0987654321',
-    createdAt: '2025-09-15',
-    caseCount: 0,
-    role: 'user',
-    status: 'locked',
-    password: 'user456',
-  },
-];
-
 const UserManagementScreen = () => {
-  const [users, setUsers] = useState<User[]>([...mockUsers]);
+  const [users, setUsers] = useState<User[]>([]);
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [addModalVisible, setAddModalVisible] = useState(false);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
-
+  const {data: usersList, fetchNextPage, hasNextPage, isFetchingNextPage} = useGetUserList();
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [editFields, setEditFields] = useState({name: '', phone: '', password: ''});
   const [addFields, setAddFields] = useState({name: '', phone: '', password: ''});
+  // console.log('usersList', JSON.stringify(usersList, null, 2));
+
+  // Lấy data thật từ API
+  // Sử dụng useInfiniteQuery trả về usersList.pages
+  const userData = usersList?.pages?.flatMap(page => page.data) || [];
 
   // Sort: newest first
   const sortedUsers = [...users].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
@@ -115,31 +87,32 @@ const UserManagementScreen = () => {
     setAddModalVisible(false);
   };
 
-  // Render item
-  const renderItem = ({item}: {item: User}) => (
+  // Render item cho data thật
+  const renderItem = ({item}: {item: any}) => (
     <View style={styles.card}>
       <View style={styles.infoRow}>
         <Text style={styles.label}>Ngày tạo:</Text>
-        <Text style={styles.value}>{item.createdAt}</Text>
+        <Text style={styles.value}>{item.createdAt?.slice(0, 10)}</Text>
       </View>
       <View style={styles.infoRow}>
         <Text style={styles.label}>Họ tên:</Text>
-        <Text style={styles.value}>{item.name}</Text>
+        <Text style={styles.value}>{item.fullName}</Text>
       </View>
       <View style={styles.infoRow}>
         <Text style={styles.label}>SĐT:</Text>
         <Text style={styles.value}>{item.phone}</Text>
       </View>
       <View style={styles.infoRow}>
-        <Text style={styles.label}>Số vụ án:</Text>
-        <Text style={styles.value}>{item.caseCount}</Text>
+        <Text style={styles.label}>Vai trò:</Text>
+        <Text style={styles.value}>{item.role}</Text>
       </View>
       <View style={styles.infoRow}>
         <Text style={styles.label}>Trạng thái:</Text>
-        <Text style={[styles.value, item.status === 'active' ? styles.active : styles.locked]}>
-          {item.status === 'active' ? 'Hoạt động' : 'Khóa'}
+        <Text style={[styles.value, {color: COLOR.GREEN}]}>
+          {item.role ? 'Đang hoạt động' : 'Bị khóa'}
         </Text>
       </View>
+
       <View style={styles.actionRow}>
         <TouchableOpacity style={styles.actionBtn} onPress={() => openEditModal(item)}>
           <Ionicons name="create-outline" size={20} color="#2563eb" />
@@ -153,20 +126,31 @@ const UserManagementScreen = () => {
     </View>
   );
 
+  // Infinite scroll (giả lập, vì API trả về nextPage)
+  const handleLoadMore = () => {
+    // Nếu có nextPage thì gọi API lấy thêm
+    // TODO: Nếu dùng useInfiniteQuery thì gọi fetchNextPage
+  };
+
   return (
     <View style={{flex: 1}}>
       <Text style={styles.title}>Quản lý người dùng</Text>
-
       <TouchableOpacity style={styles.addBtn} onPress={openAddModal}>
         <Ionicons name="person-add-outline" size={20} color="#fff" />
         <Text style={styles.addBtnText}>Thêm</Text>
       </TouchableOpacity>
-
       <FlatList
-        data={sortedUsers}
+        data={userData}
         keyExtractor={item => item.id}
         renderItem={renderItem}
         contentContainerStyle={{paddingBottom: 24}}
+        onEndReached={({distanceFromEnd}) => {
+          if (hasNextPage && !isFetchingNextPage) fetchNextPage();
+        }}
+        onEndReachedThreshold={0.2}
+        ListFooterComponent={
+          isFetchingNextPage ? <Text style={{textAlign: 'center'}}>Đang tải thêm...</Text> : null
+        }
       />
 
       {/* Delete Modal */}

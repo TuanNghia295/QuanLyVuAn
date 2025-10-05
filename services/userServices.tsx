@@ -30,3 +30,9 @@ export const createInviteCode = async () => {
   const res = await AxiosClient.get('api/v1/users/referral-code/random');
   return res;
 };
+
+// Lấy danh sách người dùng cho admin
+export const getUserList = async (page: number, limit = 10) => {
+  const res = await AxiosClient.get(`/api/v1/users?page=${page}&limit=${limit}`);
+  return res;
+};

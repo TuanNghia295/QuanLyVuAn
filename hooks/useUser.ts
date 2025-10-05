@@ -1,6 +1,12 @@
-import {createInviteCode, getInviteCode, updateUserInfo, userInfo} from '@/services/userServices';
+import {
+  createInviteCode,
+  getInviteCode,
+  getUserList,
+  updateUserInfo,
+  userInfo,
+} from '@/services/userServices';
 import {useUserStore} from '@/store/userStore';
-import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
+import {useInfiniteQuery, useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
 // Thông tin tài khoản
 export function useUserInfo() {
@@ -57,5 +63,21 @@ export function useGetInviteCode() {
     queryKey: ['inviteCode'],
     queryFn: getInviteCode,
     enabled: !!accessToken,
+  });
+}
+
+// Lấy danh sách người dùng cho admin
+export function useGetUserList(limit = 10) {
+  return useInfiniteQuery({
+    initialPageParam: 1,
+    queryKey: ['users'],
+    queryFn: ({pageParam = 1}) => getUserList(pageParam, limit),
+    getNextPageParam: lastPage => {
+      const {pagination} = lastPage;
+      if (pagination?.nextPage) {
+        return pagination.currentPage + 1;
+      }
+      return undefined;
+    },
   });
 }

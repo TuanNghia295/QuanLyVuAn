@@ -174,22 +174,6 @@ const ProfileScreen = (): React.ReactNode => {
           />
         </RowComponent>
 
-        {/* Trạng thái */}
-        <RowComponent justify="space-between" wrap="wrap">
-          <TextComponent
-            text="Trạng thái:"
-            styles={{fontWeight: '600', color: '#64748b', fontSize: 16, minWidth: 110}}
-          />
-          <TextComponent
-            text={userInfo?.status === 'active' ? 'Hoạt động' : 'Khóa'}
-            numberOfLine={1}
-            styles={{
-              fontWeight: 'bold',
-              color: userInfo?.status === 'active' ? COLOR.GREEN : COLOR.PRIMARY,
-            }}
-          />
-        </RowComponent>
-
         {/* Tạo mã giới thiệu */}
         {userInfo?.role === 'admin' && (
           <TouchableOpacity style={styles.button} onPress={handleCreateReferral}>
