@@ -1,81 +1,38 @@
+import {useGetTemplateList} from '@/hooks/useTemPlates';
 import {Ionicons} from '@expo/vector-icons';
 import {router} from 'expo-router';
 import React, {useState} from 'react';
-import {FlatList, Modal, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
-
-// Mock data
-const mockTemplates = [
-  {
-    id: '1',
-    type: 'DBNT',
-    name: 'Mẫu vụ án Lừa đảo chiếm đoạt tài sản',
-    columns: [
-      'STT',
-      'Điều',
-      'Nội dung vụ án',
-      'Số bị can',
-      'Ngày ra quyết định',
-      'Ngày hết hạn',
-      'Cán bộ thụ lý',
-      'Loại TP',
-    ],
-    rows: [
-      ['1', '174', 'Vụ lừa đảo ...', '0', '19/09/2024', '19/09/2025', 'Nguyễn Xuân Đức', 'DBNT'],
-      ['2', '174', 'Vụ lừa đảo ...', '0', '08/10/2024', '09/10/2025', 'Hồ Xuân Chung', 'DBNT'],
-    ],
-  },
-  {
-    id: '2',
-    type: 'RNT',
-    name: 'Mẫu vụ án Mua bán người dưới 16 tuổi',
-    columns: [
-      'STT',
-      'Điều',
-      'Nội dung vụ án',
-      'Số bị can',
-      'Ngày ra quyết định',
-      'Ngày hết hạn',
-      'Cán bộ thụ lý',
-      'Loại TP',
-    ],
-    rows: [['1', '151', 'Vụ mua bán ...', '0', '12/12/2024', '12/12/2025', 'Hồ Xuân Chung', 'RNT']],
-  },
-];
+import {
+  ActivityIndicator,
+  FlatList,
+  Modal,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
 const TemplateListScreen = () => {
-  const [templates, setTemplates] = useState(mockTemplates);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
+  const {data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, isError} =
+    useGetTemplateList({limit: 10});
+
+  // Flatten data from react-query infinite
+  const templates = data?.pages?.flatMap(page => page.data) || [];
 
   const openDeleteModal = (template: any) => {
     setSelectedTemplate(template);
     setDeleteModalVisible(true);
   };
   const confirmDeleteTemplate = () => {
-    if (!selectedTemplate) return;
-    setTemplates(prev => prev.filter(t => t.id !== selectedTemplate.id));
+    // TODO: Call API to delete template
     setDeleteModalVisible(false);
     setSelectedTemplate(null);
   };
 
   return (
     <View style={{flex: 1}}>
-      {/* <TouchableOpacity
-        style={{
-          backgroundColor: '#2563eb',
-          borderRadius: 12,
-          paddingVertical: 12,
-          paddingHorizontal: 24,
-          margin: 16,
-          alignSelf: 'flex-end',
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: 6,
-        }}
-        onPress={() => router.push('/templates/templateCreate')}>
-        <Ionicons name="add-circle" size={22} color="#fff" />
-        <Text style={{color: '#fff', fontWeight: 'bold', fontSize: 15}}>Tạo mẫu vụ án</Text>
-      </TouchableOpacity> */}
       <FlatList
         data={templates}
         keyExtractor={item => item.id}
@@ -83,8 +40,8 @@ const TemplateListScreen = () => {
           <View style={styles.card}>
             <Text style={styles.stt}>{index + 1}</Text>
             <View style={{flex: 1}}>
-              <Text style={styles.type}>{item.type}</Text>
-              <Text style={styles.name}>{item.name}</Text>
+              <Text style={styles.type}>{item.title}</Text>
+              <Text style={styles.name}>{item.description || 'Không có mô tả'}</Text>
             </View>
             <TouchableOpacity
               style={styles.detailBtn}
@@ -100,9 +57,22 @@ const TemplateListScreen = () => {
         )}
         contentContainerStyle={{padding: 16}}
         ListEmptyComponent={
-          <Text style={{textAlign: 'center', color: '#888', marginTop: 32}}>
-            Không có mẫu vụ án nào
-          </Text>
+          isLoading ? (
+            <ActivityIndicator size="large" color="#2563eb" style={{marginTop: 32}} />
+          ) : (
+            <Text style={{textAlign: 'center', color: '#888', marginTop: 32}}>
+              Không có mẫu vụ án nào
+            </Text>
+          )
+        }
+        onEndReached={() => {
+          if (hasNextPage && !isFetchingNextPage) fetchNextPage();
+        }}
+        onEndReachedThreshold={0.2}
+        ListFooterComponent={
+          isFetchingNextPage ? (
+            <ActivityIndicator size="small" color="#2563eb" style={{marginVertical: 16}} />
+          ) : null
         }
       />
       {/* Modal xác nhận xóa */}
@@ -112,7 +82,7 @@ const TemplateListScreen = () => {
             <Text style={styles.modalTitle}>Xác nhận xóa mẫu vụ án</Text>
             <Text style={{textAlign: 'center', marginBottom: 16}}>
               Bạn có chắc chắn muốn xóa mẫu{' '}
-              <Text style={{fontWeight: 'bold'}}>{selectedTemplate?.name}</Text>?
+              <Text style={{fontWeight: 'bold'}}>{selectedTemplate?.title}</Text>?
             </Text>
             <View style={{flexDirection: 'row', justifyContent: 'flex-end', marginTop: 12}}>
               <TouchableOpacity

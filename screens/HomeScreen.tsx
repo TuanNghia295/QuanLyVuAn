@@ -4,7 +4,6 @@ import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import {useRouter} from 'expo-router';
 import React, {useEffect, useState} from 'react';
 import {
-  Dimensions,
   FlatList,
   ScrollView,
   StyleSheet,
@@ -13,11 +12,11 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import {PieChart} from 'react-native-chart-kit';
 
 import ButtonComponent from '@/components/buttonComponent';
 import LoadingComponent from '@/components/LoadingComponent';
 import CaseFilterModal from '@/components/Modal/CaseFilterModal';
+import PieChartStats from '@/components/PieChartStats';
 import RowComponent from '@/components/rowComponent';
 import {COLOR} from '@/constants/color';
 import {useUserInfo} from '@/hooks/useUser';
@@ -171,37 +170,10 @@ const HomeScreen = (): React.ReactNode => {
           />
         )}
 
-        <PieChart
-          data={[
-            {
-              name: 'Đang xử lý',
-              population: currentStats.open,
-              color: COLOR.BLUE,
-              legendFontColor: '#222',
-              legendFontSize: 14,
-            },
-            {
-              name: 'Đã đóng',
-              population: currentStats.closed,
-              color: COLOR.GREEN,
-              legendFontColor: '#222',
-              legendFontSize: 14,
-            },
-            {
-              name: 'Quá hạn',
-              population: currentStats.expiring,
-              color: COLOR.PRIMARY,
-              legendFontColor: '#222',
-              legendFontSize: 14,
-            },
-          ]}
-          width={Dimensions.get('window').width - 48}
-          height={180}
-          chartConfig={{color: () => '#888'}}
-          accessor="population"
-          backgroundColor="transparent"
-          paddingLeft="15"
-          absolute
+        <PieChartStats
+          open={currentStats.open}
+          closed={currentStats.closed}
+          expiring={currentStats.expiring}
         />
       </View>
 
@@ -256,7 +228,7 @@ const HomeScreen = (): React.ReactNode => {
           iconFlex="left"
           styles={[styles.createBtn, styles.createCaseBtn]}
           title={'Tạo vụ án mới'}
-          onPress={() => router.push('/caseCreate')}
+          onPress={() => router.navigate('/templates/templateList')}
           type="shortPrimary"
         />
         {isAdmin && (

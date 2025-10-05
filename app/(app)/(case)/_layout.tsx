@@ -14,6 +14,7 @@ const Layout = () => {
         headerBackButtonDisplayMode: 'default',
         headerBackVisible: true,
       }}>
+      <Stack.Screen name="templateList" options={{title: 'Template'}} />
       <Stack.Screen
         name="caseCreate"
         options={{
