@@ -9,10 +9,11 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "bundleIdentifier": "com.yourapp.id",
+      "bundleIdentifier": "com.thome.QuanLyVuAn",
       "supportsTablet": true,
       "infoPlist": {
-        "NSUserTrackingUsageDescription": "Ứng dụng cần quyền thông báo để gửi các cập nhật quan trọng."
+        "NSUserTrackingUsageDescription": "Ứng dụng cần quyền thông báo để gửi các cập nhật quan trọng.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -26,7 +27,6 @@
       "predictiveBackGestureEnabled": false,
       "package": "com.tuannghia2905.QuanLyVuAn"
     },
-
     "web": {
       "output": "static",
       "favicon": "./assets/images/favicon.png"
@@ -48,9 +48,6 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/notification-icon.png",
-          "color": "#ffffff",
-          "sounds": ["./assets/notification.wav"],
           "mode": "production"
         }
       ]

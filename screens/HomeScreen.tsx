@@ -97,7 +97,6 @@ const HomeScreen = (): React.ReactNode => {
   const [pendingStatus, setPendingStatus] = useState(statusFilter);
   const [pendingDate, setPendingDate] = useState(dateFilter);
   const {expoPushToken, notification} = usePushNotifications();
-  console.log('expoPushToken', expoPushToken);
 
   const isCaseCompleted = (c: any) => c.plan && c.stages && c.stages.length > 0;
 

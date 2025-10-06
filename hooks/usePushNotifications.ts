@@ -3,6 +3,17 @@ import * as Notifications from 'expo-notifications';
 import {useEffect, useRef, useState} from 'react';
 import {Platform} from 'react-native';
 
+// Cấu hình handler để hiển thị notification
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+    shouldShowBanner: true, // hiển thị banner trên iOS
+    shouldShowList: true, // hiển thị notification trong Notification Center
+  }),
+});
+
 export default function usePushNotifications() {
   const [expoPushToken, setExpoPushToken] = useState<string | null>(null);
   const [notification, setNotification] = useState<Notifications.Notification | null>(null);
@@ -16,6 +27,7 @@ export default function usePushNotifications() {
 
     notificationListener.current = Notifications.addNotificationReceivedListener(noti => {
       setNotification(noti);
+      console.log('Notification received:', noti);
     });
 
     responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
