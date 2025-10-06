@@ -1,3 +1,5 @@
+import {createNotificationsToken} from '@/services/authServices';
+import {useMutation} from '@tanstack/react-query';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import {useEffect, useRef, useState} from 'react';
@@ -6,7 +8,6 @@ import {Platform} from 'react-native';
 // Cấu hình handler để hiển thị notification
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
-    shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: false,
     shouldShowBanner: true, // hiển thị banner trên iOS
@@ -17,8 +18,8 @@ Notifications.setNotificationHandler({
 export default function usePushNotifications() {
   const [expoPushToken, setExpoPushToken] = useState<string | null>(null);
   const [notification, setNotification] = useState<Notifications.Notification | null>(null);
-  const notificationListener = useRef<Notifications.Subscription | null>(null);
-  const responseListener = useRef<Notifications.Subscription | null>(null);
+  const notificationListener = useRef<Notifications.EventSubscription | null>(null);
+  const responseListener = useRef<Notifications.EventSubscription | null>(null);
 
   useEffect(() => {
     registerForPushNotificationsAsync().then(token => {
@@ -73,4 +74,13 @@ async function registerForPushNotificationsAsync(): Promise<string | null> {
   }
 
   return token;
+}
+
+export function useCreateExpoToken() {
+  return useMutation({
+    mutationKey: ['expoToken'],
+    mutationFn: createNotificationsToken,
+    onSuccess: () => console.log('Add token successfully'),
+    onError: e => console.log('add token failed', e),
+  });
 }

@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "Quản Lý Vụ Án",
+    "name": "",
     "slug": "QuanLyVuAn",
     "version": "1.0.0",
     "orientation": "default",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/quanLyVuAn.png",
     "scheme": "quanlyvuan",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -48,7 +48,8 @@
       [
         "expo-notifications",
         {
-          "mode": "production"
+          "mode": "production",
+          "icon": "./assets/images/quanLyVuAn.png"
         }
       ]
     ],

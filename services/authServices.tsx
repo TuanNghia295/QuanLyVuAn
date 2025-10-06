@@ -12,6 +12,11 @@ type registerProps = {
   referralCode: string;
 };
 
+type createNotificationsTokenProps = {
+  userId: string;
+  tokenExpo: string;
+};
+
 // Api đăng nhập
 export const login = async (values: loginProps) => {
   const res = await AxiosClient.post('api/v1/auth/login', values);
@@ -27,5 +32,11 @@ export const logout = async () => {
 // Api đăng ký
 export const register = async (data: registerProps) => {
   const res = await AxiosClient.post('api/v1/auth/register', data);
+  return res;
+};
+
+// Api create notifications token
+export const createNotificationsToken = async (data: createNotificationsTokenProps) => {
+  const res = await AxiosClient.post('api/notifications/create-token', data);
   return res;
 };

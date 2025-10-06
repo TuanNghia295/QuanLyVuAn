@@ -49,15 +49,7 @@ const PieChartStats: React.FC<PieChartStatsProps> = ({open, closed, expiring}) =
 };
 
 const styles = StyleSheet.create({
-  chartCardWrap: {
-    backgroundColor: '#fff',
-    borderRadius: 24,
-    marginHorizontal: 12,
-    marginBottom: 16,
-    paddingVertical: 16,
-    paddingHorizontal: 8,
-    alignItems: 'center',
-  },
+  chartCardWrap: {},
 });
 
 export default PieChartStats;

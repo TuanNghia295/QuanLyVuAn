@@ -1,8 +1,8 @@
 import {Ionicons} from '@expo/vector-icons';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 
-import {useRouter} from 'expo-router';
-import React, {useEffect, useState} from 'react';
+import {useFocusEffect, useRouter} from 'expo-router';
+import React, {useCallback, useEffect, useState} from 'react';
 import {
   FlatList,
   ScrollView,
@@ -19,7 +19,7 @@ import CaseFilterModal from '@/components/Modal/CaseFilterModal';
 import PieChartStats from '@/components/PieChartStats';
 import RowComponent from '@/components/rowComponent';
 import {COLOR} from '@/constants/color';
-import usePushNotifications from '@/hooks/usePushNotifications';
+import usePushNotifications, {useCreateExpoToken} from '@/hooks/usePushNotifications';
 import {useUserInfo} from '@/hooks/useUser';
 import {useUserStore} from '@/store/userStore';
 
@@ -97,7 +97,7 @@ const HomeScreen = (): React.ReactNode => {
   const [pendingStatus, setPendingStatus] = useState(statusFilter);
   const [pendingDate, setPendingDate] = useState(dateFilter);
   const {expoPushToken, notification} = usePushNotifications();
-
+  const {mutate: onAddToken} = useCreateExpoToken();
   const isCaseCompleted = (c: any) => c.plan && c.stages && c.stages.length > 0;
 
   // Lọc danh sách vụ án
@@ -114,7 +114,6 @@ const HomeScreen = (): React.ReactNode => {
 
   const typeOptions = Array.from(new Set(mockRecentCases.map(c => c.type)));
   const statusOptions = Array.from(new Set(mockRecentCases.map(c => c.status)));
-  const dateOptions = Array.from(new Set(mockRecentCases.map(c => c.decisionDate)));
 
   const getDaysLeft = (endDate: string) => {
     const end = new Date(endDate);
@@ -130,19 +129,19 @@ const HomeScreen = (): React.ReactNode => {
     expiring: 0,
   };
 
-  const handleDateChange = (event: any, date?: Date) => {
-    setShowPicker(false);
-    if (date) {
-      setSelectedMonth(date.getMonth() + 1);
-      setSelectedYear(date.getFullYear());
-    }
-  };
-
   useEffect(() => {
     if (isSuccess) {
       setUserInfo(userInfor);
     }
   }, [isSuccess]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (expoPushToken) {
+        onAddToken({tokenExpo: expoPushToken, userId: userInfo?.id});
+      }
+    }, [expoPushToken]),
+  );
 
   return (
     <ScrollView style={{flex: 1}}>
