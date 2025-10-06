@@ -2,10 +2,10 @@ import {Ionicons} from '@expo/vector-icons';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 
 import {useFocusEffect, useRouter} from 'expo-router';
-import React, {useCallback, useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {
+  ActivityIndicator,
   FlatList,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -19,6 +19,7 @@ import CaseFilterModal from '@/components/Modal/CaseFilterModal';
 import PieChartStats from '@/components/PieChartStats';
 import RowComponent from '@/components/rowComponent';
 import {COLOR} from '@/constants/color';
+import {useListCase} from '@/hooks/useCase';
 import usePushNotifications, {useCreateExpoToken} from '@/hooks/usePushNotifications';
 import {useUserInfo} from '@/hooks/useUser';
 import {useUserStore} from '@/store/userStore';
@@ -30,56 +31,12 @@ const mockStatsByMonth: Record<string, {open: number; closed: number; expiring: 
   '2025-07': {open: 50, closed: 20, expiring: 12},
 };
 
-// Mock case list
-const mockRecentCases = [
-  {
-    id: '1',
-    code: 'CA001',
-    name: 'Vụ án A',
-    type: 'Hình sự',
-    decisionDate: '2025-09-01',
-    endDate: '2025-09-20',
-    officer: {id: '1', name: 'Nguyen Van A'},
-    status: 'Đang xử lý',
-  },
-  {
-    id: '2',
-    code: 'CA002',
-    name: 'Vụ án B',
-    type: 'Dân sự',
-    decisionDate: '2025-08-10',
-    endDate: '2025-09-16',
-    officer: {id: '2', name: 'Tran Thi B'},
-    status: 'Sắp hết hạn',
-  },
-  {
-    id: '3',
-    code: 'CA003',
-    name: 'Vụ án C',
-    type: 'Hình sự',
-    decisionDate: '2025-07-15',
-    endDate: '2025-08-30',
-    officer: {id: '1', name: 'Nguyen Van A'},
-    status: 'Đã đóng',
-  },
-  {
-    id: '4',
-    code: 'CA004',
-    name: 'Vụ án D',
-    type: 'Dân sự',
-    decisionDate: '2025-07-15',
-    endDate: '2025-08-30',
-    officer: {id: '1', name: 'Nguyen Van A'},
-    status: 'Chưa xử lý',
-  },
-];
-
 const HomeScreen = (): React.ReactNode => {
   const router = useRouter();
   const {userInfo, setUserInfo} = useUserStore();
   const {data: userInfor, isFetching: loadingUserInfo, isSuccess} = useUserInfo();
 
-  const isAdmin = userInfo?.role;
+  const isAdmin = userInfo?.role === 'admin';
 
   // State filter thống kê theo tháng/năm
   const now = new Date();
@@ -98,27 +55,72 @@ const HomeScreen = (): React.ReactNode => {
   const [pendingDate, setPendingDate] = useState(dateFilter);
   const {expoPushToken, notification} = usePushNotifications();
   const {mutate: onAddToken} = useCreateExpoToken();
-  const isCaseCompleted = (c: any) => c.plan && c.stages && c.stages.length > 0;
+
+  const {data: listCase, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading} = useListCase();
+
+  // Flatten data từ pages
+  const allCases = useMemo(() => {
+    return listCase?.pages?.flatMap(page => page) || [];
+  }, [listCase]);
+
+  // Mapping status từ API sang hiển thị
+  const getStatusText = (status: string) => {
+    const statusMap: Record<string, string> = {
+      PENDING: 'Chưa xử lý',
+      IN_PROGRESS: 'Đang xử lý',
+      COMPLETED: 'Đã đóng',
+      EXPIRING: 'Sắp hết hạn',
+      OVERDUE: 'Quá hạn',
+    };
+    return statusMap[status] || status;
+  };
+
+  const getStatusColor = (status: string) => {
+    const colorMap: Record<string, string> = {
+      PENDING: COLOR.GRAY4,
+      IN_PROGRESS: COLOR.BLUE,
+      COMPLETED: COLOR.GREEN,
+      EXPIRING: COLOR.PRIMARY,
+      OVERDUE: COLOR.PRIMARY,
+    };
+    return colorMap[status] || COLOR.BLACK1;
+  };
 
   // Lọc danh sách vụ án
-  const filteredCases = mockRecentCases.filter(
-    c =>
-      (isAdmin || c.officer.id === userInfo?.id) &&
-      (!typeFilter || c.type === typeFilter) &&
-      (!statusFilter || c.status === statusFilter) &&
-      (!dateFilter || c.decisionDate === dateFilter) &&
-      (search === '' ||
-        c.code.toLowerCase().includes(search.toLowerCase()) ||
-        c.name.toLowerCase().includes(search.toLowerCase())),
-  );
+  const filteredCases = useMemo(() => {
+    return allCases.filter(c => {
+      const matchesUser = isAdmin || c.userId === userInfo?.id;
+      const matchesType = !typeFilter || c.template?.title === typeFilter;
+      const matchesStatus = !statusFilter || getStatusText(c.status) === statusFilter;
+      const matchesDate = !dateFilter || c.startedAt?.startsWith(dateFilter);
+      const matchesSearch =
+        search === '' ||
+        c.name.toLowerCase().includes(search.toLowerCase()) ||
+        c.description?.toLowerCase().includes(search.toLowerCase());
 
-  const typeOptions = Array.from(new Set(mockRecentCases.map(c => c.type)));
-  const statusOptions = Array.from(new Set(mockRecentCases.map(c => c.status)));
+      return matchesUser && matchesType && matchesStatus && matchesDate && matchesSearch;
+    });
+  }, [allCases, isAdmin, userInfo?.id, typeFilter, statusFilter, dateFilter, search]);
+
+  // Lấy unique options cho filter
+  const typeOptions = useMemo(() => {
+    return Array.from(new Set(allCases.map(c => c.template?.title).filter(Boolean)));
+  }, [allCases]);
+
+  const statusOptions = useMemo(() => {
+    return Array.from(new Set(allCases.map(c => getStatusText(c.status))));
+  }, [allCases]);
 
   const getDaysLeft = (endDate: string) => {
     const end = new Date(endDate);
     const diff = Math.ceil((end.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
     return diff > 0 ? diff : 0;
+  };
+
+  const formatDate = (dateString: string) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('vi-VN');
   };
 
   // Lấy dữ liệu thống kê theo tháng
@@ -143,9 +145,60 @@ const HomeScreen = (): React.ReactNode => {
     }, [expoPushToken]),
   );
 
-  return (
-    <ScrollView style={{flex: 1}}>
-      {loadingUserInfo && <LoadingComponent />}
+  const handleLoadMore = () => {
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  };
+
+  const renderFooter = () => {
+    if (!isFetchingNextPage) return null;
+    return (
+      <View style={styles.footerLoader}>
+        <ActivityIndicator size="small" color={COLOR.PRIMARY} />
+        <Text style={styles.footerLoaderText}>Đang tải thêm...</Text>
+      </View>
+    );
+  };
+
+  const renderCaseItem = ({item, index}: {item: any; index: number}) => {
+    const statusText = getStatusText(item.status);
+    const statusColor = getStatusColor(item.status);
+    const hasRequiredInfo = item.fields && item.fields.length > 0;
+
+    return (
+      <TouchableOpacity
+        style={styles.caseCard}
+        onPress={() => router.push(`/caseDetail?id=${item.id}`)}>
+        <View
+          style={{
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            marginBottom: 4,
+          }}>
+          <Text style={styles.caseTitle}>
+            {index + 1}. {item.name}
+          </Text>
+          <Text style={[styles.caseStatus, {color: statusColor}]}>{statusText}</Text>
+        </View>
+
+        <Text style={styles.caseText}>Mẫu: {item.template?.title || 'Chưa có'}</Text>
+        <Text style={styles.caseText}>Mô tả: {item.description || 'Không có mô tả'}</Text>
+        {item.assignee && (
+          <Text style={styles.caseText}>Cán bộ thụ lý: {item.assignee.fullName}</Text>
+        )}
+        <Text style={styles.caseText}>
+          Ngày QĐ: {formatDate(item.startedAt)} | Ngày hết hạn: {formatDate(item.endedAt)} | Còn
+          lại: {getDaysLeft(item.endedAt)} ngày
+        </Text>
+
+        {!hasRequiredInfo && <Text style={styles.warningText}>Thiếu thông tin!</Text>}
+      </TouchableOpacity>
+    );
+  };
+
+  const renderHeader = () => (
+    <View>
       <Text style={styles.title}>Quản lý vụ án</Text>
 
       {/* Bộ lọc tháng/năm cho PieChart */}
@@ -223,7 +276,7 @@ const HomeScreen = (): React.ReactNode => {
 
       {/* Danh sách vụ án */}
       <Text style={styles.sectionTitle}>Danh sách vụ án</Text>
-      <RowComponent justify="flex-end" styles={styles.createRowWrap}>
+      <RowComponent justify="center" styles={styles.createRowWrap}>
         <ButtonComponent
           icon={<Ionicons name="add-circle" size={18} color="#fff" />}
           iconFlex="left"
@@ -243,58 +296,34 @@ const HomeScreen = (): React.ReactNode => {
           />
         )}
       </RowComponent>
+    </View>
+  );
+
+  return (
+    <View>
+      {loadingUserInfo && <LoadingComponent />}
 
       <FlatList
         data={filteredCases}
         keyExtractor={item => item.id}
-        scrollEnabled={false}
-        contentContainerStyle={{paddingHorizontal: 12, paddingBottom: 24}}
-        renderItem={({item, index}) => {
-          const completed = isCaseCompleted(item);
-          const statusText = completed ? item.status : 'Chưa đủ thông tin';
-          const statusColor = completed
-            ? item.status === 'Đang xử lý'
-              ? COLOR.BLUE
-              : item.status === 'Đã đóng'
-              ? COLOR.GREEN
-              : item.status === 'Sắp hết hạn' || item.status === 'Quá hạn'
-              ? COLOR.PRIMARY
-              : COLOR.BLACK1
-            : COLOR.PRIMARY;
-
-          return (
-            <TouchableOpacity
-              style={styles.caseCard}
-              onPress={() => router.push(`/caseDetail?id=${item.id}`)}>
-              <View
-                style={{
-                  flexDirection: 'row',
-                  justifyContent: 'space-between',
-                  marginBottom: 4,
-                }}>
-                <Text style={styles.caseTitle}>
-                  {index + 1}. {item.name}
-                </Text>
-                <Text style={[styles.caseStatus, {color: statusColor}]}>{statusText}</Text>
-              </View>
-
-              <Text style={styles.caseText}>Số vụ án: {item.code}</Text>
-              <Text style={styles.caseText}>Loại án: {item.type}</Text>
-              <Text style={styles.caseText}>Cán bộ thụ lý: {item.officer.name}</Text>
-              <Text style={styles.caseText}>
-                Ngày QĐ: {item.decisionDate} | Ngày hết hạn: {item.endDate} | Còn lại:{' '}
-                {getDaysLeft(item.endDate)} ngày
-              </Text>
-
-              {!completed && <Text style={styles.warningText}>Thiếu thông tin!</Text>}
-            </TouchableOpacity>
-          );
-        }}
+        renderItem={renderCaseItem}
+        ListHeaderComponent={renderHeader}
+        ListFooterComponent={renderFooter}
         ListEmptyComponent={
-          <Text style={{textAlign: 'center', marginTop: 16}}>Không có vụ án phù hợp</Text>
+          isLoading ? (
+            <View style={styles.emptyContainer}>
+              <ActivityIndicator size="large" color={COLOR.PRIMARY} />
+              <Text style={styles.emptyText}>Đang tải dữ liệu...</Text>
+            </View>
+          ) : (
+            <Text style={styles.emptyText}>Không có vụ án phù hợp</Text>
+          )
         }
+        onEndReached={handleLoadMore}
+        onEndReachedThreshold={0.5}
+        showsVerticalScrollIndicator={true}
       />
-    </ScrollView>
+    </View>
   );
 };
 
@@ -313,7 +342,6 @@ const styles = StyleSheet.create({
     marginHorizontal: 12,
     marginBottom: 16,
     paddingVertical: 16,
-    paddingHorizontal: 8,
     alignItems: 'center',
   },
   monthCenterWrap: {
@@ -417,6 +445,27 @@ const styles = StyleSheet.create({
   },
   createTemplateBtn: {
     backgroundColor: '#2563eb',
+  },
+  footerLoader: {
+    paddingVertical: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  footerLoaderText: {
+    marginTop: 8,
+    fontSize: 14,
+    color: COLOR.GRAY4,
+  },
+  emptyContainer: {
+    paddingVertical: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyText: {
+    textAlign: 'center',
+    marginTop: 16,
+    fontSize: 15,
+    color: COLOR.GRAY4,
   },
 });
 
