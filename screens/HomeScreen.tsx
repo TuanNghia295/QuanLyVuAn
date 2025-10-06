@@ -19,6 +19,7 @@ import CaseFilterModal from '@/components/Modal/CaseFilterModal';
 import PieChartStats from '@/components/PieChartStats';
 import RowComponent from '@/components/rowComponent';
 import {COLOR} from '@/constants/color';
+import usePushNotifications from '@/hooks/usePushNotifications';
 import {useUserInfo} from '@/hooks/useUser';
 import {useUserStore} from '@/store/userStore';
 
@@ -95,6 +96,8 @@ const HomeScreen = (): React.ReactNode => {
   const [pendingType, setPendingType] = useState(typeFilter);
   const [pendingStatus, setPendingStatus] = useState(statusFilter);
   const [pendingDate, setPendingDate] = useState(dateFilter);
+  const {expoPushToken, notification} = usePushNotifications();
+  console.log('expoPushToken', expoPushToken);
 
   const isCaseCompleted = (c: any) => c.plan && c.stages && c.stages.length > 0;
 
