@@ -1,13 +1,24 @@
 import ButtonComponent from '@/components/buttonComponent';
 import {COLOR} from '@/constants/color';
-import {useGetUserList} from '@/hooks/useUser';
+import {useDeleteUser, useGetUserList, useUpdateUserInfo} from '@/hooks/useUser';
 import {Ionicons} from '@expo/vector-icons';
-import React, {useState} from 'react';
-import {FlatList, Modal, StyleSheet, Text, TextInput, TouchableOpacity, View} from 'react-native';
+import React, {useEffect, useState} from 'react';
+import {
+  FlatList,
+  Keyboard,
+  KeyboardAvoidingView,
+  Modal,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View,
+} from 'react-native';
 
 type User = {
   id: string;
-  name: string;
+  fullName: string;
   phone: string;
   createdAt: string;
   caseCount: number;
@@ -23,58 +34,60 @@ const UserManagementScreen = () => {
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const {data: usersList, fetchNextPage, hasNextPage, isFetchingNextPage} = useGetUserList();
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [editFields, setEditFields] = useState({name: '', phone: '', password: ''});
-  const [addFields, setAddFields] = useState({name: '', phone: '', password: ''});
+  const [editFields, setEditFields] = useState({fullName: '', phone: '', password: ''});
+  const [addFields, setAddFields] = useState({fullName: '', phone: '', password: ''});
   // console.log('usersList', JSON.stringify(usersList, null, 2));
-
+  const {mutate: onUpdateUserInfo} = useUpdateUserInfo(setEditModalVisible);
+  const {mutate: onDeleteUser, isSuccess: deleteSuccess} = useDeleteUser();
   // Lấy data thật từ API
   // Sử dụng useInfiniteQuery trả về usersList.pages
   const userData = usersList?.pages?.flatMap(page => page.data) || [];
-
-  // Sort: newest first
-  const sortedUsers = [...users].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 
   // Delete
   const openDeleteModal = (user: User) => {
     setSelectedUser(user);
     setDeleteModalVisible(true);
   };
-  const confirmDeleteUser = () => {
+  const confirmDeleteUser = async () => {
     if (!selectedUser) return;
-    setUsers(prev => prev.filter(u => u.id !== selectedUser.id));
-    setDeleteModalVisible(false);
-    setSelectedUser(null);
+    await onDeleteUser(selectedUser?.id);
   };
+
+  useEffect(() => {
+    if (deleteSuccess) {
+      setDeleteModalVisible(false);
+    }
+  }, [deleteSuccess]);
 
   // Edit
   const openEditModal = (user: User) => {
+    console.log(JSON.stringify(user, null, 2));
     setSelectedUser(user);
-    setEditFields({name: user.name, phone: user.phone, password: user.password});
+    setEditFields({fullName: user.fullName, phone: user.phone, password: user.password});
     setEditModalVisible(true);
   };
   const handleSaveEdit = () => {
     if (!selectedUser) return;
-    setUsers(prev =>
-      prev.map(u =>
-        u.id === selectedUser.id
-          ? {...u, name: editFields.name, phone: editFields.phone, password: editFields.password}
-          : u,
-      ),
-    );
+    onUpdateUserInfo({
+      userId: selectedUser.id,
+      fullName: editFields.fullName,
+      phone: editFields.phone,
+      password: editFields.password,
+    });
     setEditModalVisible(false);
   };
 
   // Add
   const openAddModal = () => {
-    setAddFields({name: '', phone: '', password: ''});
+    setAddFields({fullName: '', phone: '', password: ''});
     setAddModalVisible(true);
   };
   const handleSaveAdd = () => {
-    if (!addFields.name || !addFields.phone || !addFields.password) return;
+    if (!addFields.fullName || !addFields.phone || !addFields.password) return;
     setUsers(prev => [
       {
         id: (prev.length + 1).toString(),
-        name: addFields.name,
+        fullName: addFields.fullName,
         phone: addFields.phone,
         createdAt: new Date().toISOString().slice(0, 10),
         caseCount: 0,
@@ -126,12 +139,6 @@ const UserManagementScreen = () => {
     </View>
   );
 
-  // Infinite scroll (giả lập, vì API trả về nextPage)
-  const handleLoadMore = () => {
-    // Nếu có nextPage thì gọi API lấy thêm
-    // TODO: Nếu dùng useInfiniteQuery thì gọi fetchNextPage
-  };
-
   return (
     <View style={{flex: 1}}>
       <Text style={styles.title}>Quản lý người dùng</Text>
@@ -160,7 +167,7 @@ const UserManagementScreen = () => {
             <Text style={styles.modalTitle}>Xác nhận xóa người dùng</Text>
             <Text style={{textAlign: 'center', marginBottom: 16}}>
               Bạn có chắc chắn muốn xóa{' '}
-              <Text style={{fontWeight: 'bold'}}>{selectedUser?.name}</Text>?
+              <Text style={{fontWeight: 'bold'}}>{selectedUser?.fullName}</Text>?
             </Text>
             <View style={{flexDirection: 'row', justifyContent: 'flex-end', marginTop: 12}}>
               <ButtonComponent
@@ -176,46 +183,51 @@ const UserManagementScreen = () => {
 
       {/* Edit Modal */}
       <Modal visible={editModalVisible} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Sửa thông tin người dùng</Text>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+          <KeyboardAvoidingView style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Sửa thông tin người dùng</Text>
 
-            <Text style={styles.inputLabel}>Họ tên</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Nhập họ tên"
-              value={editFields.name}
-              onChangeText={v => setEditFields(f => ({...f, name: v}))}
-            />
-
-            <Text style={styles.inputLabel}>Số điện thoại</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Nhập số điện thoại"
-              value={editFields.phone}
-              onChangeText={v => setEditFields(f => ({...f, phone: v}))}
-              keyboardType="phone-pad"
-            />
-
-            <Text style={styles.inputLabel}>Mật khẩu</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Nhập mật khẩu"
-              value={editFields.password}
-              onChangeText={v => setEditFields(f => ({...f, password: v}))}
-              secureTextEntry
-            />
-
-            <View style={{flexDirection: 'row', justifyContent: 'flex-end', marginTop: 12}}>
-              <ButtonComponent
-                title="Hủy"
-                type="shortGray"
-                onPress={() => setEditModalVisible(false)}
+              <Text style={styles.inputLabel}>Họ tên</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Nhập họ tên"
+                value={editFields.fullName}
+                placeholderTextColor={COLOR.GRAY4}
+                onChangeText={v => setEditFields(f => ({...f, fullName: v}))}
               />
-              <ButtonComponent title="Lưu" type="shortPrimary" onPress={handleSaveEdit} />
+
+              <Text style={styles.inputLabel}>Số điện thoại</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Nhập số điện thoại"
+                value={editFields.phone}
+                onChangeText={v => setEditFields(f => ({...f, phone: v}))}
+                placeholderTextColor={COLOR.GRAY4}
+                keyboardType="phone-pad"
+              />
+
+              <Text style={styles.inputLabel}>Mật khẩu</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Nhập mật khẩu"
+                value={editFields.password}
+                onChangeText={v => setEditFields(f => ({...f, password: v}))}
+                placeholderTextColor={COLOR.GRAY4}
+                secureTextEntry
+              />
+
+              <View style={{flexDirection: 'row', justifyContent: 'flex-end', marginTop: 12}}>
+                <ButtonComponent
+                  title="Hủy"
+                  type="shortGray"
+                  onPress={() => setEditModalVisible(false)}
+                />
+                <ButtonComponent title="Lưu" type="shortPrimary" onPress={handleSaveEdit} />
+              </View>
             </View>
-          </View>
-        </View>
+          </KeyboardAvoidingView>
+        </TouchableWithoutFeedback>
       </Modal>
 
       {/* Add Modal */}
@@ -228,7 +240,7 @@ const UserManagementScreen = () => {
             <TextInput
               style={styles.input}
               placeholder="Nhập họ tên"
-              value={addFields.name}
+              value={addFields.fullName}
               onChangeText={v => setAddFields(f => ({...f, name: v}))}
             />
 

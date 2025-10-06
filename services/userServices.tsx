@@ -36,3 +36,9 @@ export const getUserList = async (page: number, limit = 10) => {
   const res = await AxiosClient.get(`/api/v1/users?page=${page}&limit=${limit}`);
   return res;
 };
+
+// Xóa người dùng
+export const deleteUser = async (userId: string) => {
+  const res = await AxiosClient.delete(`/api/v1/users/${userId}`);
+  return res;
+};

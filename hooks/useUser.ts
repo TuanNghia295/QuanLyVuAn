@@ -1,5 +1,6 @@
 import {
   createInviteCode,
+  deleteUser,
   getInviteCode,
   getUserList,
   updateUserInfo,
@@ -30,6 +31,7 @@ export function useUpdateUserInfo(setEditModalVisible?: (v: boolean) => void) {
     mutationFn: updateUserInfo,
     onSuccess: e => {
       queryClient.invalidateQueries({queryKey: ['userInfo']});
+      queryClient.invalidateQueries({queryKey: ['usersList']});
       console.log('update user sucessfully', e);
       refetchUserInfo();
       if (setEditModalVisible) setEditModalVisible(false); // đóng modal ngay khi thành công
@@ -70,14 +72,26 @@ export function useGetInviteCode() {
 export function useGetUserList(limit = 10) {
   return useInfiniteQuery({
     initialPageParam: 1,
-    queryKey: ['users'],
+    queryKey: ['usersList'],
     queryFn: ({pageParam = 1}) => getUserList(pageParam, limit),
+    refetchOnWindowFocus: true,
     getNextPageParam: lastPage => {
       const {pagination} = lastPage;
       if (pagination?.nextPage) {
         return pagination.currentPage + 1;
       }
       return undefined;
+    },
+  });
+}
+
+export function useDeleteUser() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationKey: ['usersList'],
+    mutationFn: deleteUser,
+    onSuccess: () => {
+      queryClient.invalidateQueries({queryKey: ['usersList']});
     },
   });
 }
