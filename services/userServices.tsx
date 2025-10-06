@@ -42,3 +42,9 @@ export const deleteUser = async (userId: string) => {
   const res = await AxiosClient.delete(`/api/v1/users/${userId}`);
   return res;
 };
+
+// Admin tạo tài khoản user
+export const createUserByAdmin = async (data: UserInfo) => {
+  const res = await AxiosClient.post('api/v1/users', data);
+  return res;
+};

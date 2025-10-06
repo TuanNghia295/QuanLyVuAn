@@ -1,6 +1,11 @@
 import ButtonComponent from '@/components/buttonComponent';
 import {COLOR} from '@/constants/color';
-import {useDeleteUser, useGetUserList, useUpdateUserInfo} from '@/hooks/useUser';
+import {
+  useCreateUserByAdmin,
+  useDeleteUser,
+  useGetUserList,
+  useUpdateUserInfo,
+} from '@/hooks/useUser';
 import {Ionicons} from '@expo/vector-icons';
 import React, {useEffect, useState} from 'react';
 import {
@@ -39,10 +44,9 @@ const UserManagementScreen = () => {
   // console.log('usersList', JSON.stringify(usersList, null, 2));
   const {mutate: onUpdateUserInfo} = useUpdateUserInfo(setEditModalVisible);
   const {mutate: onDeleteUser, isSuccess: deleteSuccess} = useDeleteUser();
-  // Lấy data thật từ API
+  const {mutate: onCreateUser, isSuccess: createSuccess} = useCreateUserByAdmin();
   // Sử dụng useInfiniteQuery trả về usersList.pages
   const userData = usersList?.pages?.flatMap(page => page.data) || [];
-
   // Delete
   const openDeleteModal = (user: User) => {
     setSelectedUser(user);
@@ -52,12 +56,6 @@ const UserManagementScreen = () => {
     if (!selectedUser) return;
     await onDeleteUser(selectedUser?.id);
   };
-
-  useEffect(() => {
-    if (deleteSuccess) {
-      setDeleteModalVisible(false);
-    }
-  }, [deleteSuccess]);
 
   // Edit
   const openEditModal = (user: User) => {
@@ -82,23 +80,23 @@ const UserManagementScreen = () => {
     setAddFields({fullName: '', phone: '', password: ''});
     setAddModalVisible(true);
   };
-  const handleSaveAdd = () => {
+  const handleSaveAdd = async () => {
     if (!addFields.fullName || !addFields.phone || !addFields.password) return;
-    setUsers(prev => [
-      {
-        id: (prev.length + 1).toString(),
-        fullName: addFields.fullName,
-        phone: addFields.phone,
-        createdAt: new Date().toISOString().slice(0, 10),
-        caseCount: 0,
-        role: 'user',
-        status: 'active',
-        password: addFields.password,
-      },
-      ...prev,
-    ]);
-    setAddModalVisible(false);
+    await onCreateUser({
+      fullName: addFields.fullName,
+      password: addFields.password,
+      phone: addFields.phone,
+    });
   };
+
+  useEffect(() => {
+    if (deleteSuccess) {
+      setDeleteModalVisible(false);
+    }
+    if (createSuccess) {
+      setAddModalVisible(false);
+    }
+  }, [deleteSuccess, createSuccess]);
 
   // Render item cho data thật
   const renderItem = ({item}: {item: any}) => (
@@ -241,7 +239,8 @@ const UserManagementScreen = () => {
               style={styles.input}
               placeholder="Nhập họ tên"
               value={addFields.fullName}
-              onChangeText={v => setAddFields(f => ({...f, name: v}))}
+              placeholderTextColor={COLOR.GRAY4}
+              onChangeText={v => setAddFields(f => ({...f, fullName: v}))}
             />
 
             <Text style={styles.inputLabel}>Số điện thoại</Text>
@@ -250,6 +249,7 @@ const UserManagementScreen = () => {
               placeholder="Nhập số điện thoại"
               value={addFields.phone}
               onChangeText={v => setAddFields(f => ({...f, phone: v}))}
+              placeholderTextColor={COLOR.GRAY4}
               keyboardType="phone-pad"
             />
 
@@ -259,6 +259,7 @@ const UserManagementScreen = () => {
               placeholder="Nhập mật khẩu"
               value={addFields.password}
               onChangeText={v => setAddFields(f => ({...f, password: v}))}
+              placeholderTextColor={COLOR.GRAY4}
               secureTextEntry
             />
 

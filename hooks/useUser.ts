@@ -1,5 +1,6 @@
 import {
   createInviteCode,
+  createUserByAdmin,
   deleteUser,
   getInviteCode,
   getUserList,
@@ -92,6 +93,20 @@ export function useDeleteUser() {
     mutationFn: deleteUser,
     onSuccess: () => {
       queryClient.invalidateQueries({queryKey: ['usersList']});
+    },
+  });
+}
+
+export function useCreateUserByAdmin() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationKey: ['usersList'],
+    mutationFn: createUserByAdmin,
+    onSuccess: () => {
+      queryClient.invalidateQueries({queryKey: ['usersList']});
+    },
+    onError: e => {
+      console.log('create user error', e);
     },
   });
 }
