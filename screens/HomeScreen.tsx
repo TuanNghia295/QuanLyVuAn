@@ -21,6 +21,7 @@ import RowComponent from '@/components/rowComponent';
 import {COLOR} from '@/constants/color';
 import {useListCase} from '@/hooks/useCase';
 import usePushNotifications, {useCreateExpoToken} from '@/hooks/usePushNotifications';
+import {useMyReport} from '@/hooks/useReport';
 import {useUserInfo} from '@/hooks/useUser';
 import {useUserStore} from '@/store/userStore';
 
@@ -123,14 +124,16 @@ const HomeScreen = (): React.ReactNode => {
     return date.toLocaleDateString('vi-VN');
   };
 
-  // Lấy dữ liệu thống kê theo tháng
-  const key = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}`;
-  const currentStats = mockStatsByMonth[key] || {
-    open: 0,
-    closed: 0,
-    expiring: 0,
-  };
+  // Tính startDate và endDate cho tháng được chọn
+  const startDate = useMemo(() => {
+    return new Date(selectedYear, selectedMonth - 1, 1).toISOString().slice(0, 10);
+  }, [selectedYear, selectedMonth]);
+  const endDate = useMemo(() => {
+    return new Date(selectedYear, selectedMonth, 0).toISOString().slice(0, 10);
+  }, [selectedYear, selectedMonth]);
 
+  // Gọi API lấy thống kê
+  const {data: reportStats, isLoading: loadingStats} = useMyReport(startDate, endDate);
   useEffect(() => {
     if (isSuccess) {
       setUserInfo(userInfor);
@@ -144,12 +147,7 @@ const HomeScreen = (): React.ReactNode => {
       }
     }, [expoPushToken]),
   );
-
-  const handleLoadMore = () => {
-    if (hasNextPage && !isFetchingNextPage) {
-      fetchNextPage();
-    }
-  };
+  // Removed unused mockStatsByMonth
 
   const renderFooter = () => {
     if (!isFetchingNextPage) return null;
@@ -225,9 +223,10 @@ const HomeScreen = (): React.ReactNode => {
         )}
 
         <PieChartStats
-          open={currentStats.open}
-          closed={currentStats.closed}
-          expiring={currentStats.expiring}
+          open={reportStats?.pending || 0}
+          closed={reportStats?.completed || 0}
+          expiring={reportStats?.inProgress || 0}
+          loading={loadingStats}
         />
       </View>
 
@@ -282,7 +281,7 @@ const HomeScreen = (): React.ReactNode => {
           iconFlex="left"
           styles={[styles.createBtn, styles.createCaseBtn]}
           title={'Tạo vụ án mới'}
-          onPress={() => router.navigate('/templates/templateList')}
+          onPress={() => router.navigate('/caseCreate')}
           type="shortPrimary"
         />
         {isAdmin && (
@@ -298,6 +297,12 @@ const HomeScreen = (): React.ReactNode => {
       </RowComponent>
     </View>
   );
+
+  const handleLoadMore = () => {
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  };
 
   return (
     <View>
