@@ -37,6 +37,6 @@ export const register = async (data: registerProps) => {
 
 // Api create notifications token
 export const createNotificationsToken = async (data: createNotificationsTokenProps) => {
-  const res = await AxiosClient.post('api/notifications/create-token', data);
+  const res = await AxiosClient.post('api/v1/notifications/create-token', data);
   return res;
 };

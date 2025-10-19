@@ -18,6 +18,8 @@ import LoadingComponent from '@/components/LoadingComponent';
 import CaseFilterModal from '@/components/Modal/CaseFilterModal';
 import PieChartStats from '@/components/PieChartStats';
 import RowComponent from '@/components/rowComponent';
+import Space from '@/components/Space';
+import TextComponent from '@/components/textComponent';
 import {COLOR} from '@/constants/color';
 import {useListCase} from '@/hooks/useCase';
 import usePushNotifications, {useCreateExpoToken} from '@/hooks/usePushNotifications';
@@ -57,7 +59,25 @@ const HomeScreen = (): React.ReactNode => {
   const {expoPushToken, notification} = usePushNotifications();
   const {mutate: onAddToken} = useCreateExpoToken();
 
-  const {data: listCase, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading} = useListCase();
+  const {
+    data: listCase,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    refetch: refetchListCase,
+  } = useListCase();
+  // State cho refresh
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await refetchListCase();
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   // Flatten data từ pages
   const allCases = useMemo(() => {
@@ -143,7 +163,7 @@ const HomeScreen = (): React.ReactNode => {
   useFocusEffect(
     useCallback(() => {
       if (expoPushToken) {
-        onAddToken({tokenExpo: expoPushToken, userId: userInfo?.id});
+        onAddToken({tokenExpo: expoPushToken, userId: userInfor?.id});
       }
     }, [expoPushToken]),
   );
@@ -177,19 +197,45 @@ const HomeScreen = (): React.ReactNode => {
           <Text style={styles.caseTitle}>
             {index + 1}. {item.name}
           </Text>
-          <Text style={[styles.caseStatus, {color: statusColor}]}>{statusText}</Text>
         </View>
 
-        <Text style={styles.caseText}>Mẫu: {item.template?.title || 'Chưa có'}</Text>
-        <Text style={styles.caseText}>Mô tả: {item.description || 'Không có mô tả'}</Text>
-        {item.assignee && (
-          <Text style={styles.caseText}>Cán bộ thụ lý: {item.assignee.fullName}</Text>
-        )}
-        <Text style={styles.caseText}>
-          Ngày QĐ: {formatDate(item.startedAt)} | Ngày hết hạn: {formatDate(item.endedAt)} | Còn
-          lại: {getDaysLeft(item.endedAt)} ngày
-        </Text>
+        <Space height={4} />
 
+        <RowComponent justify="flex-end">
+          <TextComponent text="Trạng thái:" title size={14} flex={1} />
+          <TextComponent styles={[styles.caseStatus, {color: statusColor}]} text={statusText} />
+        </RowComponent>
+
+        <RowComponent wrap="wrap">
+          <TextComponent text="Mẫu:" title size={14} flex={1} />
+          <TextComponent numberOfLine={6} text={`${item.template?.title || 'Chưa có'}`} />
+        </RowComponent>
+
+        <RowComponent wrap="wrap">
+          <TextComponent text="Mô tả:" title size={14} flex={!item?.description ? 1 : 0} />
+          <TextComponent numberOfLine={6} text={`${item.description || 'Không có mô tả'}`} />
+        </RowComponent>
+
+        {item.assignee && (
+          <RowComponent wrap="wrap">
+            <TextComponent text="Cán bộ thụ lý:" title size={14} flex={1} />
+            <TextComponent numberOfLine={6} text={`${item.assignee.fullName}`} />
+          </RowComponent>
+        )}
+
+        <RowComponent wrap="wrap">
+          <TextComponent text="Ngày bắt đầu:" flex={1} title size={14} />
+          <TextComponent text={`${formatDate(item.startDate)}`} />
+        </RowComponent>
+
+        <RowComponent>
+          <TextComponent text="Ngày hết hạn:" flex={1} title size={14} />
+          <TextComponent text={`${formatDate(item.endDate)}`} />
+        </RowComponent>
+        <RowComponent>
+          <TextComponent text="Còn lại:" flex={1} title size={14} />
+          <TextComponent text={`${getDaysLeft(item.endDate)} ngày`} />
+        </RowComponent>
         {!hasRequiredInfo && <Text style={styles.warningText}>Thiếu thông tin!</Text>}
       </TouchableOpacity>
     );
@@ -327,6 +373,8 @@ const HomeScreen = (): React.ReactNode => {
         onEndReached={handleLoadMore}
         onEndReachedThreshold={0.5}
         showsVerticalScrollIndicator={true}
+        refreshing={refreshing}
+        onRefresh={handleRefresh}
       />
     </View>
   );

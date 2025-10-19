@@ -39,7 +39,6 @@ const ProfileScreen = (): React.ReactNode => {
   const {mutate: onUpdateUser, isPending} = useUpdateUserInfo(setEditModalVisible);
   const {mutate: onCreateInviteCode, data: inviteCode} = useCreateInviteCode();
   const {data: getInviteCode, refetch: refetchGetInviteCode} = useGetInviteCode();
-  console.log(userInfo);
 
   // Validation schema
   const schema = yup.object().shape({
