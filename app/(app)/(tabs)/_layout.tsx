@@ -11,6 +11,7 @@ import {useUserStore} from '@/store/userStore';
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const {userInfo} = useUserStore();
+
   return (
     <Tabs
       screenOptions={{

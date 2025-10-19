@@ -58,6 +58,7 @@ const parseDate = (dateStr: string) => {
 // Hàm transform API data sang format cũ
 const transformApiData = (apiData: any, planCaseData?: any) => {
   if (!apiData) return null;
+
   return {
     id: apiData.id,
     code: apiData.code || (apiData.id ? apiData.id.slice(0, 8).toUpperCase() : ''),
@@ -73,7 +74,6 @@ const transformApiData = (apiData: any, planCaseData?: any) => {
     numberOfDefendants: apiData.numberOfDefendants || '',
     crimeType: apiData.crimeType || '',
     description: apiData.description || '',
-    note: apiData.note || '',
     order: apiData.order || '',
     isCompleted: apiData.isCompleted ?? apiData.status === 'COMPLETED',
     groups: apiData.groups || [],
@@ -137,7 +137,6 @@ const CaseDetailScreen = () => {
       order: caseData.order || '',
       startDate: parseDate(caseData.decisionDate),
       endDate: parseDate(caseData.endDate),
-      note: caseData.note || '',
       isCompleted: isCompleted,
       tasks: [], // Có thể thêm tasks nếu cần
     };
@@ -187,7 +186,6 @@ const CaseDetailScreen = () => {
       order: edited.order || '',
       startDate: parseDate(edited.decisionDate),
       endDate: parseDate(edited.endDate),
-      note: edited.note || '',
       isCompleted: edited.isCompleted || false,
       tasks: [],
     };
@@ -241,6 +239,33 @@ const CaseDetailScreen = () => {
         <View style={styles.card}>
           <Text style={styles.editTitle}>Chỉnh sửa thông tin vụ án</Text>
 
+          {/* Trạng thái vụ án */}
+          <Text style={styles.inputLabel}>Trạng thái</Text>
+          <RowComponent wrap="wrap" styles={{gap: 8}}>
+            {Object.values(STATUS_MAP).map(st => (
+              <TouchableOpacity
+                key={st}
+                style={{
+                  backgroundColor: edited.status === st ? '#2563eb' : '#e0e7ff',
+                  borderRadius: 8,
+                  paddingVertical: 8,
+                  paddingHorizontal: 14,
+                }}
+                onPress={() => setEdited(e => ({...e!, status: st}))}
+                disabled={isPending}>
+                <Text
+                  style={{
+                    color: edited.status === st ? '#fff' : '#2563eb',
+                    fontWeight: 'bold',
+                    fontSize: 13,
+                  }}>
+                  {st}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </RowComponent>
+
+          {/* Các trường cơ bản */}
           <Text style={styles.inputLabel}>Tên vụ án *</Text>
           <TextInput
             style={styles.input}
@@ -259,16 +284,32 @@ const CaseDetailScreen = () => {
             numberOfLines={4}
           />
 
-          <Text style={styles.inputLabel}>Ghi chú</Text>
+          <Text style={styles.inputLabel}>Điều luật</Text>
           <TextInput
-            style={[styles.input, styles.textArea]}
-            value={edited.note}
-            onChangeText={v => setEdited(e => ({...e!, note: v}))}
-            placeholder="Nhập ghi chú"
-            multiline
-            numberOfLines={3}
+            style={styles.input}
+            value={edited.applicableLaw}
+            onChangeText={v => setEdited(e => ({...e!, applicableLaw: v}))}
+            placeholder="Nhập điều luật"
           />
 
+          <Text style={styles.inputLabel}>Số bị cáo</Text>
+          <TextInput
+            style={styles.input}
+            value={edited.numberOfDefendants}
+            onChangeText={v => setEdited(e => ({...e!, numberOfDefendants: v}))}
+            placeholder="Nhập số bị cáo"
+            keyboardType="numeric"
+          />
+
+          <Text style={styles.inputLabel}>Loại tội phạm</Text>
+          <TextInput
+            style={styles.input}
+            value={edited.crimeType}
+            onChangeText={v => setEdited(e => ({...e!, crimeType: v}))}
+            placeholder="Nhập loại tội phạm"
+          />
+
+          {/* Ngày bắt đầu/kết thúc */}
           <Text style={styles.inputLabel}>Ngày bắt đầu (dd/mm/yyyy)</Text>
           <TouchableOpacity
             onPress={() => setDatePickerVisible('decisionDate')}
@@ -327,6 +368,49 @@ const CaseDetailScreen = () => {
             onCancel={() => setDatePickerVisible(null)}
             locale="vi"
           />
+
+          {/* Nhóm và trường động */}
+          {Array.isArray(edited.groups) && edited.groups.length > 0 && (
+            <View style={{marginTop: 16}}>
+              <Text style={styles.sectionTitle}>Thông tin chi tiết</Text>
+              {edited.groups.map((group: any, gIdx: number) => (
+                <View key={group.id || gIdx} style={{marginTop: gIdx > 0 ? 16 : 8}}>
+                  <Text style={styles.groupTitle}>{group.title}</Text>
+                  {group.description && <Text style={styles.groupDesc}>{group.description}</Text>}
+                  {Array.isArray(group.fields) && group.fields.length > 0 && (
+                    <View>
+                      {group.fields.map((field: any, fIdx: number) => (
+                        <View key={field.id || fIdx} style={{marginBottom: 8}}>
+                          <Text style={styles.inputLabel}>
+                            {field.fieldLabel}
+                            {field.isRequired ? ' *' : ''}
+                          </Text>
+                          <TextInput
+                            style={styles.input}
+                            value={field.fieldValue}
+                            onChangeText={v => {
+                              setEdited(e => {
+                                const newGroups = [...e.groups];
+                                newGroups[gIdx] = {
+                                  ...newGroups[gIdx],
+                                  fields: newGroups[gIdx].fields.map((fld: any, idx: number) =>
+                                    idx === fIdx ? {...fld, fieldValue: v} : fld,
+                                  ),
+                                };
+                                return {...e, groups: newGroups};
+                              });
+                            }}
+                            placeholder={field.placeholder || ''}
+                            editable={field.isEditable}
+                          />
+                        </View>
+                      ))}
+                    </View>
+                  )}
+                </View>
+              ))}
+            </View>
+          )}
 
           <View style={{flexDirection: 'row', gap: 12, marginTop: 16}}>
             <TouchableOpacity
@@ -425,49 +509,7 @@ const CaseDetailScreen = () => {
             </View>
           )}
 
-          {caseData.note && (
-            <View style={[styles.infoRow, {flexDirection: 'column', alignItems: 'flex-start'}]}>
-              <Text style={styles.label}>Ghi chú:</Text>
-              <Text style={[styles.value, {marginTop: 4}]}>{caseData.note}</Text>
-            </View>
-          )}
-
           {/* Cập nhật trạng thái (admin only) */}
-          {currentUser.role === 'admin' && (
-            <View
-              style={{marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: '#e5e7eb'}}>
-              <Text style={{fontSize: 14, color: '#64748b', marginBottom: 8, fontWeight: '600'}}>
-                Cập nhật trạng thái vụ án:
-              </Text>
-              <RowComponent wrap="wrap" styles={{gap: 8}}>
-                {['Chờ xử lý', 'Đang xử lý', 'Tạm hoãn', 'Hoàn tất', 'Đã hủy'].map(st => (
-                  <TouchableOpacity
-                    key={st}
-                    style={{
-                      backgroundColor: caseData.status === st ? '#2563eb' : '#e0e7ff',
-                      borderRadius: 8,
-                      paddingVertical: 8,
-                      paddingHorizontal: 14,
-                    }}
-                    onPress={() => handleUpdateStatus(st)}
-                    disabled={isPending}>
-                    {isPending && caseData.status === st ? (
-                      <ActivityIndicator size="small" color="#fff" />
-                    ) : (
-                      <Text
-                        style={{
-                          color: caseData.status === st ? '#fff' : '#2563eb',
-                          fontWeight: 'bold',
-                          fontSize: 13,
-                        }}>
-                        {st}
-                      </Text>
-                    )}
-                  </TouchableOpacity>
-                ))}
-              </RowComponent>
-            </View>
-          )}
         </View>
       )}
 

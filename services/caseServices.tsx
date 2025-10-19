@@ -6,7 +6,6 @@ export interface CaseUpdatePayload {
   order: string;
   startDate: string;
   endDate: string;
-  note: string;
   isCompleted: boolean;
   tasks: {
     name: string;
@@ -27,7 +26,8 @@ export const caseDetail = async (caseId: string) => {
 
 // Chỉnh sửa vụ án
 export const updateCase = async (caseId: string, body: CaseUpdatePayload) => {
-  const res = await AxiosClient.post(`api/v1/cases/${caseId}`, body);
+  console.log('body', body);
+  const res = await AxiosClient.put(`api/v1/cases/${caseId}`, body);
   return res.data;
 };
 

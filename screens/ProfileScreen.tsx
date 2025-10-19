@@ -81,7 +81,7 @@ const ProfileScreen = (): React.ReactNode => {
   };
 
   const handleLogout = async () => {
-    await onLogOut();
+    onLogOut();
   };
 
   const handlePickAvatar = async () => {
@@ -215,7 +215,7 @@ const ProfileScreen = (): React.ReactNode => {
         </TouchableOpacity>
 
         {/* Nút đăng xuất */}
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+        <TouchableOpacity style={styles.logoutButton} onPress={() => handleLogout()}>
           <TextComponent
             text="Đăng xuất"
             color="#fff"

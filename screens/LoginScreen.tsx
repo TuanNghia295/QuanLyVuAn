@@ -45,8 +45,8 @@ const LoginScreen = () => {
   const router = useRouter();
   const {mutateAsync: onLogin, isPending, isError, isSuccess} = useLogin();
 
-  const onSubmit = (data: LoginForm) => {
-    onLogin(data);
+  const onSubmit = async (data: LoginForm) => {
+    await onLogin(data);
   };
 
   return (

@@ -14,6 +14,8 @@ export function useLogin() {
     mutationFn: login,
     onSuccess: async (data: any) => {
       if (data?.accessToken) {
+        console.log('da vao');
+
         setAccessToken(data.accessToken);
         // refetch thông tin user
         await queryClient.invalidateQueries({queryKey: ['userInfo']});

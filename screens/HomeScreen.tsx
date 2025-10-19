@@ -27,19 +27,12 @@ import {useMyReport} from '@/hooks/useReport';
 import {useUserInfo} from '@/hooks/useUser';
 import {useUserStore} from '@/store/userStore';
 
-// Mock thống kê theo tháng
-const mockStatsByMonth: Record<string, {open: number; closed: number; expiring: number}> = {
-  '2025-09': {open: 80, closed: 40, expiring: 8},
-  '2025-08': {open: 60, closed: 30, expiring: 5},
-  '2025-07': {open: 50, closed: 20, expiring: 12},
-};
-
 const HomeScreen = (): React.ReactNode => {
   const router = useRouter();
   const {userInfo, setUserInfo} = useUserStore();
   const {data: userInfor, isFetching: loadingUserInfo, isSuccess} = useUserInfo();
 
-  const isAdmin = userInfo?.role === 'admin';
+  const isAdmin = userInfor?.role === 'admin';
 
   // State filter thống kê theo tháng/năm
   const now = new Date();
