@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "",
+    "name": "QuanLyVuAn",
     "slug": "QuanLyVuAn",
     "version": "1.0.0",
     "orientation": "default",
@@ -62,6 +62,7 @@
       "eas": {
         "projectId": "2980fa67-9e1f-44d1-9437-d971e9277bba"
       }
-    }
+    },
+    "owner": "tuannghia2905"
   }
 }

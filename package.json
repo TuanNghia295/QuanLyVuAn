@@ -52,13 +52,16 @@
     "react-native-worklets": "0.5.1",
     "victory-native": "^41.20.1",
     "yup": "^1.7.0",
-    "zustand": "^5.0.8"
+    "zustand": "^5.0.8",
+    "expo-dev-client": "~6.0.15"
   },
   "devDependencies": {
     "@types/jwt-decode": "^2.2.1",
     "@types/react": "~19.1.0",
+    "eas-cli": "^16.24.1",
     "eslint": "^9.25.0",
     "eslint-config-expo": "~10.0.0",
+    "expo-cli": "^6.3.12",
     "typescript": "~5.9.2"
   },
   "private": true
