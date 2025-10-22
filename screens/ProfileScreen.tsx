@@ -81,7 +81,7 @@ const ProfileScreen = (): React.ReactNode => {
   };
 
   const handleLogout = async () => {
-    onLogOut();
+    await onLogOut();
   };
 
   const handlePickAvatar = async () => {

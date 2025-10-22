@@ -14,9 +14,10 @@ export function useLogin() {
     mutationFn: login,
     onSuccess: async (data: any) => {
       if (data?.accessToken) {
-        console.log('da vao');
+        // Ensure the access token is fully persisted in the store (and AsyncStorage)
+        // before triggering any requests that rely on Authorization header.
+        await setAccessToken(data.accessToken);
 
-        setAccessToken(data.accessToken);
         // refetch thông tin user
         await queryClient.invalidateQueries({queryKey: ['userInfo']});
 

@@ -149,6 +149,7 @@ const HomeScreen = (): React.ReactNode => {
   const {data: reportStats, isLoading: loadingStats} = useMyReport(startDate, endDate);
   useEffect(() => {
     if (isSuccess) {
+      console.log('isSuccess', isSuccess);
       setUserInfo(userInfor);
     }
   }, [isSuccess]);
