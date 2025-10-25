@@ -13,8 +13,8 @@ export interface CaseUpdatePayload {
 }
 
 // Danh sách vụ án
-export const listCase = async (limit: number, page: number) => {
-  const res = await AxiosClient.get(`api/v1/cases?limit=${limit}&page=${page}`);
+export const listCase = async (limit: number, page: number, q?: string) => {
+  const res = await AxiosClient.get(`api/v1/cases?limit=${limit}&page=${page}&q=${q}&order=desc`);
   return res.data;
 };
 

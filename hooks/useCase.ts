@@ -8,11 +8,11 @@ import {
 import {useUserStore} from '@/store/userStore';
 import {useInfiniteQuery, useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
-export function useListCase(limit = 10) {
+export function useListCase(limit = 10, q?: string) {
   return useInfiniteQuery({
     initialPageParam: 1,
-    queryKey: ['listCase'],
-    queryFn: ({pageParam = 1}) => listCase(limit, pageParam),
+    queryKey: ['listCase', q],
+    queryFn: ({pageParam = 1}) => listCase(limit, pageParam, q),
     refetchOnWindowFocus: true,
     getNextPageParam: lastPage => {
       const {pagination} = lastPage;

@@ -52,6 +52,7 @@ const HomeScreen = (): React.ReactNode => {
   const [pendingDate, setPendingDate] = useState(dateFilter);
   const {expoPushToken, notification} = usePushNotifications();
   const {mutate: onAddToken} = useCreateExpoToken();
+  const [debouncedSearch, setDebouncedSearch] = useState(search);
 
   const {
     data: listCase,
@@ -60,7 +61,7 @@ const HomeScreen = (): React.ReactNode => {
     isFetchingNextPage,
     isLoading,
     refetch: refetchListCase,
-  } = useListCase();
+  } = useListCase(10, debouncedSearch?.trim());
   // State cho refresh
   const [refreshing, setRefreshing] = useState(false);
 
@@ -81,11 +82,17 @@ const HomeScreen = (): React.ReactNode => {
   // Mapping status từ API sang hiển thị
   const getStatusText = (status: string) => {
     const statusMap: Record<string, string> = {
-      PENDING: 'Chưa xử lý',
-      IN_PROGRESS: 'Đang xử lý',
-      COMPLETED: 'Đã đóng',
-      EXPIRING: 'Sắp hết hạn',
-      OVERDUE: 'Quá hạn',
+      // PENDING: 'Chưa xử lý',
+      // IN_PROGRESS: 'Đang xử lý',
+      // COMPLETED: 'Đã đóng',
+      // EXPIRING: 'Sắp hết hạn',
+      // OVERDUE: 'Quá hạn',
+
+      PENDING: 'Chưa xử lý', // Chưa xử lý
+      IN_PROGRESS: 'Đang xử lý', // Đang xử lý
+      COMPLETED: 'Hoàn thành', // Đã đóng
+      ON_HOLD: 'Tạm hoãn', // Tạm hoãn
+      CANCELLED: 'Hủy bỏ', // Hủy bỏ
     };
     return statusMap[status] || status;
   };
@@ -108,14 +115,10 @@ const HomeScreen = (): React.ReactNode => {
       const matchesType = !typeFilter || c.template?.title === typeFilter;
       const matchesStatus = !statusFilter || getStatusText(c.status) === statusFilter;
       const matchesDate = !dateFilter || c.startedAt?.startsWith(dateFilter);
-      const matchesSearch =
-        search === '' ||
-        c.name.toLowerCase().includes(search.toLowerCase()) ||
-        c.description?.toLowerCase().includes(search.toLowerCase());
 
-      return matchesUser && matchesType && matchesStatus && matchesDate && matchesSearch;
+      return matchesUser && matchesType && matchesStatus && matchesDate;
     });
-  }, [allCases, isAdmin, userInfo?.id, typeFilter, statusFilter, dateFilter, search]);
+  }, [allCases, isAdmin, userInfo?.id, typeFilter, statusFilter, dateFilter]);
 
   // Lấy unique options cho filter
   const typeOptions = useMemo(() => {
@@ -162,7 +165,18 @@ const HomeScreen = (): React.ReactNode => {
       }
     }, [expoPushToken]),
   );
-  // Removed unused mockStatsByMonth
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 500);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [search]);
+
+  console.log('debouncedSearch', debouncedSearch);
 
   const renderFooter = () => {
     if (!isFetchingNextPage) return null;
@@ -236,107 +250,132 @@ const HomeScreen = (): React.ReactNode => {
     );
   };
 
-  const renderHeader = () => (
-    <View>
-      <Text style={styles.title}>Quản lý vụ án</Text>
+  const renderHeader = useMemo(
+    () => (
+      <View>
+        <Text style={styles.title}>Quản lý vụ án</Text>
 
-      {/* Bộ lọc tháng/năm cho PieChart */}
-      <View style={styles.chartCardWrap}>
-        <TouchableOpacity style={styles.monthCenterWrap} onPress={() => setShowPicker(true)}>
-          <Text style={styles.monthTextLabel}>Tháng</Text>
-          <Text style={styles.monthTextValue}>{selectedMonth}</Text>
-          <Text style={styles.monthTextLabel}>/</Text>
-          <Text style={styles.monthTextValue}>{selectedYear}</Text>
-          <Ionicons name="calendar" size={20} color={COLOR.PRIMARY} style={{marginLeft: 6}} />
-        </TouchableOpacity>
-
-        {showPicker && (
-          <DateTimePickerModal
-            isVisible={showPicker}
-            mode="date"
-            onConfirm={date => {
-              setSelectedMonth(date.getMonth() + 1);
-              setSelectedYear(date.getFullYear());
-              setShowPicker(false);
-            }}
-            onCancel={() => setShowPicker(false)}
-          />
-        )}
-
-        <PieChartStats
-          open={reportStats?.pending || 0}
-          closed={reportStats?.completed || 0}
-          expiring={reportStats?.inProgress || 0}
-          loading={loadingStats}
-        />
-      </View>
-
-      {/* Bộ lọc danh sách vụ án */}
-      <View style={styles.filterRow}>
-        <View style={{flexDirection: 'row', alignItems: 'center'}}>
-          <TextInput
-            style={[styles.searchInput, {flex: 1}]}
-            placeholder="Tìm kiếm số vụ án / tên vụ án"
-            value={search}
-            onChangeText={setSearch}
-            placeholderTextColor={COLOR.GRAY4}
-          />
-          <TouchableOpacity
-            style={styles.filterIconBtn}
-            onPress={() => {
-              setPendingType(typeFilter);
-              setPendingStatus(statusFilter);
-              setPendingDate(dateFilter);
-              setFilterModalVisible(true);
-            }}>
-            <Ionicons name="filter" size={24} color={COLOR.BLUE} />
+        {/* Bộ lọc tháng/năm cho PieChart */}
+        <View style={styles.chartCardWrap}>
+          <TouchableOpacity style={styles.monthCenterWrap} onPress={() => setShowPicker(true)}>
+            <Text style={styles.monthTextLabel}>Tháng</Text>
+            <Text style={styles.monthTextValue}>{selectedMonth}</Text>
+            <Text style={styles.monthTextLabel}>/</Text>
+            <Text style={styles.monthTextValue}>{selectedYear}</Text>
+            <Ionicons name="calendar" size={20} color={COLOR.PRIMARY} style={{marginLeft: 6}} />
           </TouchableOpacity>
+
+          {showPicker && (
+            <DateTimePickerModal
+              isVisible={showPicker}
+              mode="date"
+              onConfirm={date => {
+                setSelectedMonth(date.getMonth() + 1);
+                setSelectedYear(date.getFullYear());
+                setShowPicker(false);
+              }}
+              onCancel={() => setShowPicker(false)}
+            />
+          )}
+
+          <PieChartStats
+            open={reportStats?.pending || 0}
+            closed={reportStats?.completed || 0}
+            expiring={reportStats?.inProgress || 0}
+            loading={loadingStats}
+          />
         </View>
-      </View>
 
-      {/* Modal lọc */}
-      <CaseFilterModal
-        visible={filterModalVisible}
-        typeOptions={typeOptions}
-        statusOptions={statusOptions}
-        pendingType={pendingType}
-        pendingStatus={pendingStatus}
-        pendingDate={pendingDate}
-        setPendingType={setPendingType}
-        setPendingStatus={setPendingStatus}
-        setPendingDate={setPendingDate}
-        onCancel={() => setFilterModalVisible(false)}
-        onConfirm={() => {
-          setTypeFilter(pendingType);
-          setStatusFilter(pendingStatus);
-          setDateFilter(pendingDate);
-          setFilterModalVisible(false);
-        }}
-      />
+        {/* Bộ lọc danh sách vụ án */}
+        <View style={styles.filterRow}>
+          <View style={{flexDirection: 'row', alignItems: 'center'}}>
+            <TextInput
+              style={[styles.searchInput, {flex: 1}]}
+              placeholder="Tìm kiếm số vụ án / tên vụ án"
+              value={search}
+              onChangeText={value => setSearch(value)}
+              placeholderTextColor={COLOR.GRAY4}
+              autoCorrect={false}
+              autoCapitalize="none"
+              returnKeyType="search"
+            />
+            <TouchableOpacity
+              style={styles.filterIconBtn}
+              onPress={() => {
+                setPendingType(typeFilter);
+                setPendingStatus(statusFilter);
+                setPendingDate(dateFilter);
+                setFilterModalVisible(true);
+              }}>
+              <Ionicons name="filter" size={24} color={COLOR.BLUE} />
+            </TouchableOpacity>
+          </View>
+        </View>
 
-      {/* Danh sách vụ án */}
-      <Text style={styles.sectionTitle}>Danh sách vụ án</Text>
-      <RowComponent justify="center" styles={styles.createRowWrap}>
-        <ButtonComponent
-          icon={<Ionicons name="add-circle" size={18} color="#fff" />}
-          iconFlex="left"
-          styles={[styles.createBtn, styles.createCaseBtn]}
-          title={'Tạo vụ án mới'}
-          onPress={() => router.navigate('/caseCreate')}
-          type="shortPrimary"
+        {/* Modal lọc */}
+        <CaseFilterModal
+          visible={filterModalVisible}
+          typeOptions={typeOptions}
+          statusOptions={statusOptions}
+          pendingType={pendingType}
+          pendingStatus={pendingStatus}
+          pendingDate={pendingDate}
+          setPendingType={setPendingType}
+          setPendingStatus={setPendingStatus}
+          setPendingDate={setPendingDate}
+          onCancel={() => setFilterModalVisible(false)}
+          onConfirm={() => {
+            setTypeFilter(pendingType);
+            setStatusFilter(pendingStatus);
+            setDateFilter(pendingDate);
+            setFilterModalVisible(false);
+          }}
         />
-        {isAdmin && (
+
+        {/* Danh sách vụ án */}
+        <Text style={styles.sectionTitle}>Danh sách vụ án</Text>
+        <RowComponent justify="center" styles={styles.createRowWrap}>
           <ButtonComponent
-            icon={<Ionicons name="document-text-outline" size={18} color="#fff" />}
+            icon={<Ionicons name="add-circle" size={18} color="#fff" />}
             iconFlex="left"
-            styles={[styles.createBtn, styles.createTemplateBtn]}
-            title={' Mẫu vụ án'}
-            onPress={() => router.push('/templates/templateList')}
+            styles={[styles.createBtn, styles.createCaseBtn]}
+            title={'Tạo vụ án mới'}
+            onPress={() => router.navigate('/caseCreate')}
             type="shortPrimary"
           />
-        )}
-      </RowComponent>
-    </View>
+          {isAdmin && (
+            <ButtonComponent
+              icon={<Ionicons name="document-text-outline" size={18} color="#fff" />}
+              iconFlex="left"
+              styles={[styles.createBtn, styles.createTemplateBtn]}
+              title={' Mẫu vụ án'}
+              onPress={() => router.push('/templates/templateList')}
+              type="shortPrimary"
+            />
+          )}
+        </RowComponent>
+      </View>
+    ),
+    [
+      search,
+      debouncedSearch,
+      typeFilter,
+      statusFilter,
+      dateFilter,
+      pendingType,
+      pendingStatus,
+      pendingDate,
+      filterModalVisible,
+      selectedMonth,
+      selectedYear,
+      showPicker,
+      reportStats,
+      loadingStats,
+      isAdmin,
+      router,
+      statusOptions,
+      typeOptions,
+    ],
   );
 
   const handleLoadMore = () => {
