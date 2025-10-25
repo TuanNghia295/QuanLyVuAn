@@ -6,6 +6,7 @@ import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {
   ActivityIndicator,
   FlatList,
+  RefreshControl,
   StyleSheet,
   Text,
   TextInput,
@@ -368,7 +369,14 @@ const HomeScreen = (): React.ReactNode => {
         onEndReachedThreshold={0.5}
         showsVerticalScrollIndicator={true}
         refreshing={refreshing}
-        onRefresh={handleRefresh}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            colors={[COLOR.PRIMARY]}
+            tintColor="red"
+          />
+        }
       />
     </View>
   );

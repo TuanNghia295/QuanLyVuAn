@@ -1,15 +1,17 @@
 import LoadingComponent from '@/components/LoadingComponent';
 import {COLOR} from '@/constants/color';
-import {useDeleteNoti, useListNoti} from '@/hooks/useNotifications';
+import {useDeleteNoti, useListNoti, useMarkAllRead} from '@/hooks/useNotifications';
 import {Ionicons} from '@expo/vector-icons';
 import {formatDistanceToNow} from 'date-fns';
 import {vi} from 'date-fns/locale';
-import {useRouter} from 'expo-router';
-import React, {useMemo, useState} from 'react';
+import {useFocusEffect, useRouter} from 'expo-router';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {
   ActivityIndicator,
   Alert,
+  AppState,
   FlatList,
+  RefreshControl,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -19,6 +21,7 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 
 const NotificationScreen = () => {
   const router = useRouter();
+  const appState = useRef(AppState.currentState);
   const {
     data: listNoti,
     fetchNextPage,
@@ -27,6 +30,7 @@ const NotificationScreen = () => {
     isLoading,
     refetch: refetchNotiList,
   } = useListNoti();
+  const {mutate: onMarkAllRead} = useMarkAllRead();
 
   const {mutate: deleteNotification} = useDeleteNoti();
 
@@ -105,6 +109,30 @@ const NotificationScreen = () => {
     }
   };
 
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', nextAppState => {
+      // Khi app quay lại foreground
+      if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
+        refetchNotiList();
+        onMarkAllRead();
+      }
+      appState.current = nextAppState;
+    });
+
+    return () => subscription.remove();
+  }, [refetchNotiList, onMarkAllRead]);
+
+  useFocusEffect(
+    useCallback(() => {
+      const timer = setTimeout(() => {
+        refetchNotiList();
+        onMarkAllRead();
+      }, 1000);
+
+      return () => clearTimeout(timer);
+    }, [refetchNotiList, onMarkAllRead]),
+  );
+
   return (
     <SafeAreaView>
       {isLoading ? (
@@ -115,14 +143,21 @@ const NotificationScreen = () => {
           <FlatList
             data={allNotifications}
             renderItem={renderNotificationItem}
-            keyExtractor={item => item.id}
+            keyExtractor={(item, index) => (item.id ? String(item.id) : `noti-${index}`)}
             onEndReached={handleLoadMore}
             onEndReachedThreshold={0.5}
             refreshing={refreshing}
-            onRefresh={handleRefresh}
             ListFooterComponent={renderFooter}
             ListEmptyComponent={<Text style={styles.emptyText}>Không có thông báo nào</Text>}
             contentContainerStyle={{padding: 16}}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={handleRefresh}
+                colors={[COLOR.PRIMARY]}
+                tintColor="red"
+              />
+            }
           />
         </>
       )}
@@ -134,8 +169,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginTop: 16,
-    marginBottom: 12,
     textAlign: 'center',
     color: '#222',
   },

@@ -14,6 +14,8 @@ export const useListNoti = (limit = 10) => {
     queryKey: ['notiList'],
     queryFn: ({pageParam = 1}) => notiList(limit, pageParam),
     refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    refetchOnMount: true,
     getNextPageParam: lastPage => {
       const {pagination} = lastPage;
       if (pagination?.nextPage) {
@@ -43,10 +45,13 @@ export const useReadNoti = () => {
 };
 
 export const useMarkAllRead = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationKey: ['unreadNoti'],
     mutationFn: readAllNoti,
-    onSuccess: () => console.log('read'),
+    onSuccess: () => {
+      queryClient.invalidateQueries({queryKey: ['unreadNoti']});
+    },
     onError: e => console.log('Error read ', e),
   });
 };
@@ -59,6 +64,7 @@ export const useDeleteNoti = () => {
     onSuccess: () => {
       console.log('Delete successfully');
       queryClient.invalidateQueries({queryKey: ['notiList']});
+      queryClient.invalidateQueries({queryKey: ['unreadNoti']});
     },
     onError: e => console.log('Error read by id', e),
   });
