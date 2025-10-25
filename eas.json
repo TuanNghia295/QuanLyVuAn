@@ -9,9 +9,11 @@
       "distribution": "internal"
     },
     "preview": {
+      "credentialsSource": "local",
       "distribution": "internal"
     },
     "production": {
+      "credentialsSource": "local",
       "autoIncrement": true
     }
   },

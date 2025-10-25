@@ -82,5 +82,6 @@ export function useCreateExpoToken() {
     mutationFn: createNotificationsToken,
     onSuccess: () => console.log('Add token successfully'),
     onError: e => console.log('add token failed', e),
+    retry: 5,
   });
 }

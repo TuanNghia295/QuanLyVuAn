@@ -1,62 +1,132 @@
+import LoadingComponent from '@/components/LoadingComponent';
 import {COLOR} from '@/constants/color';
+import {useDeleteNoti, useListNoti} from '@/hooks/useNotifications';
+import {Ionicons} from '@expo/vector-icons';
+import {formatDistanceToNow} from 'date-fns';
+import {vi} from 'date-fns/locale';
 import {useRouter} from 'expo-router';
-import React from 'react';
-import {FlatList, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
-
-const mockNotifications = [
-  {
-    id: '1',
-    title: 'Có vụ án sắp hết hạn',
-    caseName: 'Vụ án A',
-    time: '2025-09-19 08:00',
-    read: false,
-  },
-  {
-    id: '2',
-    title: 'Vụ án B đã cập nhật timeline',
-    caseName: 'Vụ án B',
-    time: '2025-09-17 14:30',
-    read: true,
-  },
-  {
-    id: '3',
-    title: 'Có vụ án mới được giao',
-    caseName: 'Vụ án C',
-    time: '2025-09-16 09:15',
-    read: false,
-  },
-];
+import React, {useMemo, useState} from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import {SafeAreaView} from 'react-native-safe-area-context';
 
 const NotificationScreen = () => {
   const router = useRouter();
-  return (
-    <View>
-      <Text style={styles.title}>Thông báo vụ án</Text>
-      <FlatList
-        data={mockNotifications}
-        keyExtractor={item => item.id}
-        renderItem={({item}) => (
-          <View style={[styles.item]}>
-            <View style={{flex: 1}}>
-              <Text style={styles.itemTitle}>{item.title}</Text>
-              <Text style={styles.itemCase}>{item.caseName}</Text>
-              <Text style={styles.itemTime}>{item.time}</Text>
-            </View>
-            <TouchableOpacity
-              style={styles.detailBtn}
-              onPress={() => router.push(`/caseDetail?id=${item.id}`)}>
-              <Text style={styles.detailBtnText}>Xem chi tiết</Text>
-            </TouchableOpacity>
-          </View>
+  const {
+    data: listNoti,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    refetch: refetchNotiList,
+  } = useListNoti();
+
+  const {mutate: deleteNotification} = useDeleteNoti();
+
+  // State cho refresh
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await refetchNotiList();
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  // Flatten data từ pages
+  const allNotifications = useMemo(() => {
+    return listNoti?.pages?.flatMap(page => page.data) || [];
+  }, [listNoti]);
+
+  const handleDelete = (id: string) => {
+    Alert.alert('Xóa thông báo', 'Bạn có chắc chắn muốn xóa thông báo này không?', [
+      {
+        text: 'Hủy',
+        style: 'cancel',
+      },
+      {
+        text: 'Xóa',
+        style: 'destructive',
+        onPress: () => deleteNotification(id),
+      },
+    ]);
+  };
+
+  const renderNotificationItem = ({item}: {item: any}) => {
+    const timeAgo = formatDistanceToNow(new Date(item.createdAt), {
+      addSuffix: true,
+      locale: vi,
+    });
+
+    return (
+      <View style={[styles.item, !item.isRead && styles.unreadCard]}>
+        <TouchableOpacity style={styles.deleteButton} onPress={() => handleDelete(item.id)}>
+          <Ionicons name="close-circle" size={24} color={COLOR.PRIMARY} />
+        </TouchableOpacity>
+        <View style={{flex: 1}}>
+          <Text style={styles.itemTitle}>{item.title}</Text>
+          {item.string && <Text style={styles.itemTitle}>{item.string}</Text>}
+          <Text style={styles.itemCase}>Loại: {item.type}</Text>
+          <Text style={styles.itemTime}>{timeAgo}</Text>
+        </View>
+        {item.caseId && (
+          <TouchableOpacity
+            style={styles.detailBtn}
+            onPress={() => router.push(`/caseDetail?id=${item.caseId}`)}>
+            <Text style={styles.detailBtnText}>Xem chi tiết</Text>
+          </TouchableOpacity>
         )}
-        contentContainerStyle={{padding: 16}}
-        ListEmptyComponent={
-          <Text style={{textAlign: 'center', color: '#888', marginTop: 32}}>
-            Không có thông báo nào
-          </Text>
-        }
-      />
-    </View>
+      </View>
+    );
+  };
+
+  const renderFooter = () => {
+    if (!isFetchingNextPage) return null;
+    return (
+      <View style={styles.footerLoader}>
+        <ActivityIndicator size="small" color={COLOR.PRIMARY} />
+        <Text style={styles.footerText}>Đang tải thêm...</Text>
+      </View>
+    );
+  };
+
+  const handleLoadMore = () => {
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  };
+
+  return (
+    <SafeAreaView>
+      {isLoading ? (
+        <LoadingComponent />
+      ) : (
+        <>
+          <Text style={styles.title}>Thông báo vụ án</Text>
+          <FlatList
+            data={allNotifications}
+            renderItem={renderNotificationItem}
+            keyExtractor={item => item.id}
+            onEndReached={handleLoadMore}
+            onEndReachedThreshold={0.5}
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            ListFooterComponent={renderFooter}
+            ListEmptyComponent={<Text style={styles.emptyText}>Không có thông báo nào</Text>}
+            contentContainerStyle={{padding: 16}}
+          />
+        </>
+      )}
+    </SafeAreaView>
   );
 };
 
@@ -68,6 +138,14 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     textAlign: 'center',
     color: '#222',
+  },
+  deleteButton: {
+    position: 'absolute',
+    top: -8,
+    right: -8,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    zIndex: 1,
   },
   item: {
     flexDirection: 'row',
@@ -81,7 +159,9 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
   },
-
+  unreadCard: {
+    backgroundColor: '#f0f9ff', // Light blue background for unread notifications
+  },
   itemTitle: {
     fontSize: 16,
     fontWeight: 'bold',
@@ -90,12 +170,12 @@ const styles = StyleSheet.create({
   },
   itemCase: {
     fontSize: 14,
-    color: '#2980b9',
+    color: COLOR.PRIMARY,
     marginBottom: 2,
   },
   itemTime: {
     fontSize: 13,
-    color: '#888',
+    color: COLOR.GRAY4,
   },
   detailBtn: {
     backgroundColor: COLOR.PRIMARY,
@@ -108,6 +188,21 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 14,
     fontWeight: 'bold',
+  },
+  footerLoader: {
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  footerText: {
+    marginTop: 8,
+    fontSize: 14,
+    color: COLOR.GRAY4,
+  },
+  emptyText: {
+    textAlign: 'center',
+    marginTop: 24,
+    fontSize: 16,
+    color: COLOR.GRAY4,
   },
 });
 
