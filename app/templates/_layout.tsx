@@ -15,6 +15,7 @@ const Layout = () => {
       <Stack.Screen name="templateList" options={{title: 'Danh sách'}} />
       <Stack.Screen name="templateDetail" options={{title: 'Chi tiết'}} />
       <Stack.Screen name="templateCreate" />
+      <Stack.Screen name="chooseTemplate" options={{title: 'Chọn mẫu vụ án'}} />
     </Stack>
   );
 };

@@ -5,9 +5,9 @@ import {fontFamilies} from './fontFamilies';
 export const globalStyles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
+    padding: 10,
     marginTop: 20,
-    backgroundColor: 'f5f6fa',
+    backgroundColor: '#f8fafc',
   },
   button: {
     flexDirection: 'row',

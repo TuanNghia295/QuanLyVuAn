@@ -1,5 +1,6 @@
-import {getTemplateList} from '@/services/templateServices';
-import {useInfiniteQuery} from '@tanstack/react-query';
+import {getTemplateById, getTemplateList} from '@/services/templateServices';
+import {useUserStore} from '@/store/userStore';
+import {useInfiniteQuery, useQuery} from '@tanstack/react-query';
 
 export const useGetTemplateList = ({limit = 10}) => {
   return useInfiniteQuery({
@@ -13,5 +14,14 @@ export const useGetTemplateList = ({limit = 10}) => {
       }
       return undefined;
     },
+  });
+};
+
+export const useGetTemplateById = (templateId?: string) => {
+  const {accessToken} = useUserStore();
+  return useQuery({
+    queryKey: ['getTemplateById'],
+    queryFn: () => getTemplateById(templateId as string),
+    enabled: !!accessToken && !!templateId,
   });
 };

@@ -1,6 +1,7 @@
 import {
   caseDetail,
   CaseUpdatePayload,
+  createCase,
   listCase,
   planCaseById,
   updateCase,
@@ -56,5 +57,19 @@ export const usePlanCase = (id: string) => {
     queryKey: ['planCase,caseDetail', id],
     queryFn: ({queryKey}) => planCaseById(queryKey[1]), // queryKey[1] = id
     enabled: !!accessToken && !!id,
+  });
+};
+
+export const useCreateCase = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationKey: ['createCase'],
+    mutationFn: createCase,
+    onSuccess: e => {
+      queryClient.invalidateQueries({queryKey: ['listCase']});
+    },
+    onError: e => {
+      console.log('Create Case Error', e);
+    },
   });
 };

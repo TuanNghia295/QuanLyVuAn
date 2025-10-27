@@ -1,5 +1,5 @@
 import {HapticTab} from '@/components/haptic-tab';
-import {IconSymbol} from '@/components/ui/icon-symbol.ios';
+import {IconSymbol} from '@/components/ui/icon-symbol';
 import {COLOR} from '@/constants/color';
 import {Colors} from '@/constants/theme';
 import {useColorScheme} from '@/hooks/use-color-scheme';

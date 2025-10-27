@@ -76,7 +76,7 @@ const transformApiData = (apiData: any, planCaseData?: any) => {
     description: apiData.description || '',
     order: apiData.order || '',
     isCompleted: apiData.isCompleted ?? apiData.status === 'COMPLETED',
-    groups: apiData.groups || [],
+    groups: apiData.groups || apiData.template?.groups || [],
     stages: Array.isArray(apiData.phases)
       ? apiData.phases.map((phase: any) => ({
           name: phase.name,
@@ -100,7 +100,11 @@ const CaseDetailScreen = () => {
   const {data: planCaseData} = usePlanCase(id || '');
   const {data: apiCaseDetail, isLoading} = useCaseDetail(id ? {id} : undefined);
   const {mutate: onUpdateCase, isPending} = useUpdateCase();
-
+  useEffect(() => {
+    if (apiCaseDetail) {
+      console.log('🧾 Case detail raw:', JSON.stringify(apiCaseDetail, null, 2));
+    }
+  }, [apiCaseDetail]);
   // Transform API data
   const transformedData = useMemo(() => {
     return transformApiData(apiCaseDetail, planCaseData);
@@ -515,26 +519,29 @@ const CaseDetailScreen = () => {
 
       {/* Thông tin từ Groups */}
       {caseData.groups && caseData.groups.length > 0 && (
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Thông tin chi tiết</Text>
-          {caseData.groups.map((group: any, gIdx: any) => (
-            <View key={group.id} style={{marginTop: gIdx > 0 ? 16 : 8}}>
-              <Text style={styles.groupTitle}>{group.title}</Text>
-              {group.description && <Text style={styles.groupDesc}>{group.description}</Text>}
-              {group.fields &&
-                group.fields.map((field: any) => (
-                  <View key={field.id} style={styles.infoRow}>
-                    <Text style={styles.label}>{field.fieldLabel}:</Text>
-                    <Text style={styles.value}>
-                      {field.fieldType === 'date'
-                        ? formatDate(new Date(field.fieldValue).toString())
-                        : field.fieldValue || 'Chưa có dữ liệu'}
-                    </Text>
-                  </View>
-                ))}
-            </View>
-          ))}
-        </View>
+        <>
+          {console.log('✅ Groups in render:', caseData.groups)}
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>Thông tin chi tiết</Text>
+            {caseData.groups.map((group: any, gIdx: any) => (
+              <View key={group.id} style={{marginTop: gIdx > 0 ? 16 : 8}}>
+                <Text style={styles.groupTitle}>{group.title}</Text>
+                {group.description && <Text style={styles.groupDesc}>{group.description}</Text>}
+                {group.fields &&
+                  group.fields.map((field: any) => (
+                    <View key={field.id} style={styles.infoRow}>
+                      <Text style={styles.label}>{field.fieldLabel}:</Text>
+                      <Text style={styles.value}>
+                        {field.fieldType === 'date'
+                          ? formatDate(new Date(field.fieldValue).toString())
+                          : field.fieldValue || 'Chưa có dữ liệu'}
+                      </Text>
+                    </View>
+                  ))}
+              </View>
+            ))}
+          </View>
+        </>
       )}
 
       {/* Giai đoạn vụ án */}

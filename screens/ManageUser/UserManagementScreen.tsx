@@ -1,5 +1,6 @@
 import ButtonComponent from '@/components/buttonComponent';
 import {COLOR} from '@/constants/color';
+import {globalStyles} from '@/constants/globalStyles';
 import {
   useCreateUserByAdmin,
   useDeleteUser,
@@ -138,7 +139,7 @@ const UserManagementScreen = () => {
   );
 
   return (
-    <View style={{flex: 1}}>
+    <View style={[globalStyles.container]}>
       <Text style={styles.title}>Quản lý người dùng</Text>
       <TouchableOpacity style={styles.addBtn} onPress={openAddModal}>
         <Ionicons name="person-add-outline" size={20} color="#fff" />

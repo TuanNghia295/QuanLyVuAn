@@ -176,8 +176,6 @@ const HomeScreen = (): React.ReactNode => {
     };
   }, [search]);
 
-  console.log('debouncedSearch', debouncedSearch);
-
   const renderFooter = () => {
     if (!isFetchingNextPage) return null;
     return (
@@ -334,16 +332,16 @@ const HomeScreen = (): React.ReactNode => {
 
         {/* Danh sách vụ án */}
         <Text style={styles.sectionTitle}>Danh sách vụ án</Text>
-        <RowComponent justify="center" styles={styles.createRowWrap}>
+        <RowComponent justify="flex-end" styles={styles.createRowWrap}>
           <ButtonComponent
             icon={<Ionicons name="add-circle" size={18} color="#fff" />}
             iconFlex="left"
             styles={[styles.createBtn, styles.createCaseBtn]}
             title={'Tạo vụ án mới'}
-            onPress={() => router.navigate('/caseCreate')}
+            onPress={() => router.navigate('/templates/chooseTemplate')}
             type="shortPrimary"
           />
-          {isAdmin && (
+          {/* {isAdmin && (
             <ButtonComponent
               icon={<Ionicons name="document-text-outline" size={18} color="#fff" />}
               iconFlex="left"
@@ -352,7 +350,7 @@ const HomeScreen = (): React.ReactNode => {
               onPress={() => router.push('/templates/templateList')}
               type="shortPrimary"
             />
-          )}
+          )} */}
         </RowComponent>
       </View>
     ),

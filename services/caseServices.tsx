@@ -12,6 +12,31 @@ export interface CaseUpdatePayload {
   }[];
 }
 
+export interface CreateCasePayload {
+  templateId: string;
+  applicableLaw: string;
+  numberOfDefendants: string;
+  crimeType: string;
+  name: string;
+  status: string;
+  description: string;
+  userId: string;
+  fields: CaseFieldPayload[];
+}
+
+export interface CaseFieldPayload {
+  groupId: string;
+  fieldLabel: string;
+  fieldName: string;
+  fieldType: string;
+  isEdit: boolean;
+  isRequired: boolean;
+  placeholder: string;
+  defaultValue: string;
+  description: string;
+  value?: string;
+}
+
 // Danh sách vụ án
 export const listCase = async (limit: number, page: number, q?: string) => {
   const res = await AxiosClient.get(`api/v1/cases?limit=${limit}&page=${page}&q=${q}&order=desc`);
@@ -35,4 +60,16 @@ export const updateCase = async (caseId: string, body: CaseUpdatePayload) => {
 export const planCaseById = async (caseId: string) => {
   const res = await AxiosClient.get(`api/v1/cases/${caseId}/plan`);
   return res;
+};
+
+// Tạo vụ án
+export const createCase = async (data: CreateCasePayload) => {
+  try {
+    console.log('Data', JSON.stringify(data, null, 2));
+    const res = await AxiosClient.post('api/v1/cases', data);
+    return res;
+  } catch (error) {
+    console.error('Error creating case:', error);
+    throw error;
+  }
 };

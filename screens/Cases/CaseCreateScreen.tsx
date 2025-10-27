@@ -1,360 +1,533 @@
-import StageDatePicker from '@/components/DatePicker/StageDatePicker';
-import RenderModalDropdown from '@/components/Modal/DropdownModal';
+// CaseCreateScreen.v2.tsx
+import StaffSelectModal from '@/components/Modal/StaffSelectModal';
 import {COLOR} from '@/constants/color';
-import {yupResolver} from '@hookform/resolvers/yup';
-import React from 'react';
-import {Controller, useFieldArray, useForm} from 'react-hook-form';
-import {ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View} from 'react-native';
+import {useCreateCase} from '@/hooks/useCase';
+import {useGetTemplateById} from '@/hooks/useTemPlates';
+import {router, useLocalSearchParams} from 'expo-router';
+import moment from 'moment';
+import React, {useEffect, useMemo, useState} from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import * as yup from 'yup';
 
-// Mock data
-const statusOptions = [
-  {label: 'Chưa xử lý', value: 'pending'},
-  {label: 'Đang xử lý', value: 'processing'},
-  {label: 'Đã hoàn thành', value: 'completed'},
-  {label: 'Quá hạn', value: 'overdue'},
-];
+// --- Interfaces (mở rộng) ---
+type FieldType = 'text' | 'textarea' | 'date' | 'number' | 'select';
 
-const currentUser = {id: '1', name: 'Nguyen Van A', role: 'admin'};
-
-const officerOptions = [
-  {label: 'Nguyen Van A', value: '1'},
-  {label: 'Tran Thi B', value: '2'},
-  {label: 'Le Van C', value: '3'},
-];
-
-const schema = yup.object().shape({
-  lawArticle: yup.string().required('Điều luật bắt buộc'),
-  content: yup.string().required('Nội dung bắt buộc'),
-  decisionDate: yup.string().required('Ngày ra quyết định'),
-  endDate: yup.string().required('Ngày hết hạn'),
-  officer: yup.string().required('Cán bộ thụ lý'),
-  crimeType: yup.string().required('Loại tội phạm'),
-  status: yup.string().required('Trạng thái'),
-  stages: yup.array().of(
-    yup.object().shape({
-      name: yup.string().required('Tên giai đoạn'),
-      timeline: yup.string().required('Timeline'),
-      startTime: yup.string().required('Thời gian bắt đầu'),
-      endTime: yup.string().required('Thời gian kết thúc'),
-    }),
-  ),
-});
-export default function CaseCreateScreen() {
-  const inset = useSafeAreaInsets();
-
-  const {
-    control,
-    handleSubmit,
-    formState: {errors},
-  } = useForm({
-    defaultValues: {
-      lawArticle: '',
-      content: '',
-      decisionDate: '',
-      endDate: '',
-      officer: '',
-      crimeType: '',
-      status: '',
-      stages: [{name: '', timeline: '', startTime: '', endTime: ''}],
-    },
-    resolver: yupResolver(schema),
-  });
-
-  const {fields, append, remove} = useFieldArray({control, name: 'stages'});
-
-  const [officerModal, setOfficerModal] = React.useState(false);
-  const [statusModal, setStatusModal] = React.useState(false);
-
-  const onSubmit = (data: any) => {
-    alert('Đã tạo vụ án!\n' + JSON.stringify(data, null, 2));
-  };
-
-  return (
-    <ScrollView style={styles.container}>
-      <View style={styles.card}>
-        {/* Điều luật */}
-        <View style={styles.fieldBox}>
-          <Text style={styles.label}>Điều luật</Text>
-          <Controller
-            control={control}
-            name="lawArticle"
-            render={({field: {onChange, value}}) => (
-              <TextInput
-                style={styles.input}
-                placeholder="Điều luật"
-                value={value}
-                onChangeText={onChange}
-              />
-            )}
-          />
-          {errors.lawArticle && <Text style={styles.error}>{errors.lawArticle.message}</Text>}
-        </View>
-
-        {/* Nội dung */}
-        <View style={styles.fieldBox}>
-          <Text style={styles.label}>Nội dung</Text>
-          <Controller
-            control={control}
-            name="content"
-            render={({field: {onChange, value}}) => (
-              <TextInput
-                style={styles.input}
-                placeholder="Nội dung"
-                value={value}
-                onChangeText={onChange}
-              />
-            )}
-          />
-          {errors.content && <Text style={styles.error}>{errors.content.message}</Text>}
-        </View>
-
-        {/* Ngày ra quyết định */}
-        <View style={styles.fieldBox}>
-          <Text style={styles.label}>Ngày ra quyết định</Text>
-          <Controller
-            control={control}
-            name="decisionDate"
-            render={({field: {onChange, value}}) => (
-              <StageDatePicker label="Chọn ngày ra quyết định" value={value} onChange={onChange} />
-            )}
-          />
-          {errors.decisionDate && <Text style={styles.error}>{errors.decisionDate.message}</Text>}
-        </View>
-
-        {/* Ngày hết hạn */}
-        <View style={styles.fieldBox}>
-          <Text style={styles.label}>Ngày hết hạn</Text>
-          <Controller
-            control={control}
-            name="endDate"
-            render={({field: {onChange, value}}) => (
-              <StageDatePicker label="Chọn ngày hết hạn" value={value} onChange={onChange} />
-            )}
-          />
-          {errors.endDate && <Text style={styles.error}>{errors.endDate.message}</Text>}
-        </View>
-
-        {/* Cán bộ thụ lý */}
-        {currentUser.role === 'admin' ? (
-          <View style={styles.fieldBox}>
-            <Text style={styles.label}>Cán bộ thụ lý</Text>
-            <Controller
-              control={control}
-              name="officer"
-              render={({field: {onChange, value}}) => (
-                <RenderModalDropdown
-                  label="Cán bộ thụ lý"
-                  options={officerOptions}
-                  value={value}
-                  onChange={onChange}
-                  visible={officerModal}
-                  setVisible={setOfficerModal}
-                />
-              )}
-            />
-          </View>
-        ) : (
-          <View style={styles.fieldBox}>
-            <Text style={styles.label}>Cán bộ thụ lý</Text>
-            <TextInput
-              style={[styles.input, {backgroundColor: '#f1f5f9'}]}
-              value={currentUser.name}
-              editable={false}
-            />
-          </View>
-        )}
-        {errors.officer && <Text style={styles.error}>{errors.officer.message}</Text>}
-
-        {/* Loại tội phạm */}
-        <View style={styles.fieldBox}>
-          <Text style={styles.label}>Loại tội phạm</Text>
-          <Controller
-            control={control}
-            name="crimeType"
-            render={({field: {onChange, value}}) => (
-              <TextInput
-                style={styles.input}
-                placeholder="Loại tội phạm"
-                value={value}
-                onChangeText={onChange}
-              />
-            )}
-          />
-          {errors.crimeType && <Text style={styles.error}>{errors.crimeType.message}</Text>}
-        </View>
-
-        {/* Trạng thái vụ án */}
-        <View style={styles.fieldBox}>
-          <Text style={styles.label}>Trạng thái vụ án</Text>
-          <Controller
-            control={control}
-            name="status"
-            render={({field: {onChange, value}}) => (
-              <RenderModalDropdown
-                label="Trạng thái vụ án"
-                options={statusOptions}
-                value={value}
-                onChange={onChange}
-                visible={statusModal}
-                setVisible={setStatusModal}
-              />
-            )}
-          />
-        </View>
-        {errors.status && <Text style={styles.error}>{errors.status.message}</Text>}
-      </View>
-
-      {/* Giai đoạn */}
-      <Text style={styles.sectionTitle}>Các giai đoạn</Text>
-      {fields.map((item, idx) => (
-        <View key={item.id} style={styles.stageBox}>
-          <Text style={styles.stageLabel}>Giai đoạn {idx + 1}</Text>
-
-          {/* Tên giai đoạn */}
-          <Text style={styles.label}>Tên giai đoạn</Text>
-          <Controller
-            control={control}
-            name={`stages.${idx}.name`}
-            render={({field: {onChange, value}}) => (
-              <TextInput
-                style={styles.input}
-                placeholder="Tên giai đoạn"
-                value={value}
-                onChangeText={onChange}
-              />
-            )}
-          />
-          {errors.stages?.[idx]?.name && (
-            <Text style={styles.error}>{errors.stages[idx].name.message}</Text>
-          )}
-
-          {/* Timeline */}
-          <Text style={styles.label}>Timeline</Text>
-          <Controller
-            control={control}
-            name={`stages.${idx}.timeline`}
-            render={({field: {onChange, value}}) => (
-              <TextInput
-                style={styles.input}
-                placeholder="Timeline"
-                value={value}
-                onChangeText={onChange}
-              />
-            )}
-          />
-          {errors.stages?.[idx]?.timeline && (
-            <Text style={styles.error}>{errors.stages[idx].timeline.message}</Text>
-          )}
-
-          {/* Ngày bắt đầu */}
-          <Text style={styles.label}>Ngày bắt đầu</Text>
-          <Controller
-            control={control}
-            name={`stages.${idx}.startTime`}
-            render={({field: {onChange, value}}) => (
-              <StageDatePicker label="Chọn ngày bắt đầu" value={value} onChange={onChange} />
-            )}
-          />
-          {errors.stages?.[idx]?.startTime && (
-            <Text style={styles.error}>{errors.stages[idx].startTime.message}</Text>
-          )}
-
-          {/* Ngày kết thúc */}
-          <Text style={styles.label}>Ngày kết thúc</Text>
-          <Controller
-            control={control}
-            name={`stages.${idx}.endTime`}
-            render={({field: {onChange, value}}) => (
-              <StageDatePicker label="Chọn ngày kết thúc" value={value} onChange={onChange} />
-            )}
-          />
-          {errors.stages?.[idx]?.endTime && (
-            <Text style={styles.error}>{errors.stages[idx].endTime.message}</Text>
-          )}
-
-          <TouchableOpacity style={styles.removeBtn} onPress={() => remove(idx)}>
-            <Text style={styles.removeText}>Xóa </Text>
-          </TouchableOpacity>
-        </View>
-      ))}
-
-      <TouchableOpacity
-        style={[styles.addBtn]}
-        onPress={() => append({name: '', timeline: '', startTime: '', endTime: ''})}>
-        <Text style={styles.addText}>Thêm giai đoạn</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={[styles.saveBtn, {marginBottom: inset.bottom + 16}]}
-        onPress={handleSubmit(onSubmit)}>
-        <Text style={styles.saveText}>Tạo vụ án</Text>
-      </TouchableOpacity>
-    </ScrollView>
-  );
+interface Field {
+  id: string;
+  fieldName: string;
+  fieldLabel: string;
+  description?: string | null;
+  fieldType: FieldType;
+  isRequired: boolean;
+  placeholder?: string | null;
+  options?: {label: string; value: string}[]; // cho select
+  defaultValue?: any;
 }
 
+interface Group {
+  id: string;
+  title: string;
+  description?: string;
+  fields: Field[];
+}
+
+interface Template {
+  id: string;
+  title: string;
+  description?: string;
+  groups: Group[];
+}
+
+const CaseCreateScreenV2 = () => {
+  const inset = useSafeAreaInsets();
+  const {caseId} = useLocalSearchParams();
+  const id = Array.isArray(caseId) ? caseId[0] : caseId;
+
+  // debug logs để tìm nguyên nhân group không hiển thị
+  // (giữ lại khi debug, xóa khi production)
+
+  console.log('route caseId:', caseId, 'id used:', id);
+
+  const {
+    data: templateRaw,
+    isLoading: isTemplateLoading,
+    error: templateError,
+  } = useGetTemplateById(id) as {data?: Template | any; isLoading: boolean; error?: any};
+
+  // nếu hook trả về wrapper {data: { data: Template }} handle cả 2 trường hợp:
+  const template: Template | undefined = useMemo(() => {
+    if (!templateRaw) return undefined;
+    // nếu templateRaw.data tồn tại, dùng nó
+    if (templateRaw?.data && typeof templateRaw.data === 'object' && templateRaw.data.groups) {
+      return templateRaw.data as Template;
+    }
+    // nếu templateRaw trực tiếp có groups
+    if (templateRaw.groups) {
+      return templateRaw as Template;
+    }
+    // otherwise return undefined
+    return undefined;
+  }, [templateRaw]);
+
+  // debug shape
+
+  console.log('template resolved:', template);
+
+  console.log('groups type:', typeof template?.groups, 'groups len:', template?.groups?.length);
+
+  // basic form
+  const [basicForm, setBasicForm] = useState({
+    title: '',
+    soBiCan: '',
+    applicableLaw: '',
+    crimeType: '',
+    moTa: '',
+  });
+
+  // staff modal
+  const [officerModal, setOfficerModal] = useState(false);
+  const [selectedOfficer, setSelectedOfficer] = useState<{id: string; fullName: string} | null>(
+    null,
+  );
+
+  // dynamic fields state keyed by field.id
+  const [dynamicFields, setDynamicFields] = useState<{[fieldId: string]: any}>({});
+
+  // date picker state
+  const [datePickerVisible, setDatePickerVisible] = useState(false);
+  const [selectedDateFieldId, setSelectedDateFieldId] = useState<string | null>(null);
+
+  // select modal
+  const [selectModalVisible, setSelectModalVisible] = useState(false);
+  const [selectOptions, setSelectOptions] = useState<{label: string; value: string}[]>([]);
+  const [selectFieldId, setSelectFieldId] = useState<string | null>(null);
+
+  const {mutate: createCase, isPending: isCreating} = useCreateCase();
+
+  // init dynamicFields from template defaults when template loaded
+  useEffect(() => {
+    if (!template) return;
+    const initial: {[k: string]: any} = {};
+    template.groups.forEach(group => {
+      group.fields.forEach(field => {
+        if (field.defaultValue !== undefined && field.defaultValue !== null) {
+          // nếu defaultValue là date string, convert về Date
+          if (field.fieldType === 'date') {
+            initial[field.id] = new Date(field.defaultValue);
+          } else {
+            initial[field.id] = field.defaultValue;
+          }
+        } else {
+          initial[field.id] = '';
+        }
+      });
+    });
+    setDynamicFields(initial);
+  }, [template]);
+
+  const handleBasicChange = (k: keyof typeof basicForm, v: string) =>
+    setBasicForm(prev => ({...prev, [k]: v}));
+
+  const handleDynamicFieldChange = (fieldId: string, value: any) =>
+    setDynamicFields(prev => ({...prev, [fieldId]: value}));
+
+  const handleSelectOfficer = (staff: any) => {
+    setSelectedOfficer(staff);
+    setOfficerModal(false);
+  };
+
+  // Validation
+  const validateForm = (): {ok: boolean; message?: string} => {
+    if (!basicForm.title || basicForm.title.trim() === '') {
+      return {ok: false, message: 'Vui lòng nhập tên vụ án'};
+    }
+    if (!selectedOfficer) {
+      return {ok: false, message: 'Vui lòng chọn cán bộ thụ lý'};
+    }
+    // dynamic required
+    for (const group of template?.groups || []) {
+      for (const field of group.fields) {
+        if (field.isRequired) {
+          const val = dynamicFields[field.id];
+          if (val === undefined || val === null || (typeof val === 'string' && val.trim() === '')) {
+            return {ok: false, message: `Vui lòng nhập ${field.fieldLabel}`};
+          }
+        }
+      }
+    }
+    return {ok: true};
+  };
+
+  // map dynamic fields -> payload compatible
+  const mapDynamicFields = () =>
+    (template?.groups || []).flatMap(group =>
+      group.fields.map(field => {
+        const raw = dynamicFields[field.id];
+        let value: string | undefined;
+        if (raw === undefined || raw === null || raw === '') {
+          value = undefined;
+        } else if (field.fieldType === 'date' && raw instanceof Date) {
+          value = raw.toISOString();
+        } else {
+          value = String(raw);
+        }
+        return {
+          groupId: group.id,
+          fieldLabel: field.fieldLabel,
+          fieldName: field.fieldName,
+          fieldType: field.fieldType,
+          isEdit: false,
+          isRequired: field.isRequired,
+          placeholder: field.placeholder ?? '',
+          defaultValue: field.defaultValue ?? '',
+          description: field.description ?? '',
+          value,
+        };
+      }),
+    );
+
+  const handleSubmit = () => {
+    const v = validateForm();
+    if (!v.ok) {
+      Alert.alert('Lỗi', v.message || 'Vui lòng kiểm tra lại thông tin');
+      return;
+    }
+    const payload = {
+      name: basicForm.title,
+      templateId: template?.id || '',
+      applicableLaw: basicForm.applicableLaw || 'Điều 1, Luật Hình sự',
+      numberOfDefendants: basicForm.soBiCan || '0',
+      crimeType: basicForm.crimeType || 'Tội phạm hình sự',
+      description: basicForm.moTa || '',
+      status: 'PENDING',
+      userId: selectedOfficer?.id || '',
+      fields: mapDynamicFields(),
+    };
+
+    console.log('📦 Data gửi lên', JSON.stringify(payload, null, 2));
+
+    createCase(payload, {
+      onSuccess: () => {
+        Alert.alert('Thành công', 'Tạo vụ án thành công');
+        // reset form nếu muốn tạo tiếp
+        setBasicForm({title: '', soBiCan: '', applicableLaw: '', crimeType: '', moTa: ''});
+        setDynamicFields({});
+        setSelectedOfficer(null);
+        router.back(); // hoặc có thể giữ lại và clear
+      },
+      onError: (error: any) => {
+        const msg = error?.response?.data?.message || 'Có lỗi khi tạo vụ án';
+        Alert.alert('Lỗi', msg);
+      },
+    });
+  };
+
+  // UI helpers
+  if (isTemplateLoading) {
+    return (
+      <View style={[styles.center, {flex: 1}]}>
+        <ActivityIndicator size="large" />
+        <Text style={{marginTop: 12}}>Đang tải mẫu vụ án...</Text>
+      </View>
+    );
+  }
+
+  if (!template) {
+    return (
+      <View style={[styles.center, {flex: 1, padding: 16}]}>
+        <Text>Không tìm thấy mẫu vụ án. Kiểm tra lại id hoặc logs.</Text>
+        <Text style={{marginTop: 8, color: '#666'}}>Xem console logs để debug.</Text>
+      </View>
+    );
+  }
+
+  return (
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      style={{flex: 1}}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}>
+      <ScrollView contentContainerStyle={[styles.container, {paddingBottom: inset.bottom + 24}]}>
+        <Text style={styles.sectionTitle}>{template.title}</Text>
+        {template.description ? (
+          <Text style={styles.sectionDesc}>{template.description}</Text>
+        ) : null}
+
+        {/* Basic fields */}
+        <View style={styles.fieldBox}>
+          <Text style={styles.label}>
+            Tên vụ án <Text style={{color: 'red'}}>*</Text>
+          </Text>
+          <TextInput
+            value={basicForm.title}
+            onChangeText={t => handleBasicChange('title', t)}
+            placeholder="Nhập tên vụ án"
+            placeholderTextColor={COLOR.GRAY4}
+            style={styles.input}
+          />
+        </View>
+
+        {/* other basic */}
+        <View style={styles.twoCols}>
+          <View style={{flex: 1, marginRight: 8}}>
+            <Text style={styles.label}>Số bị can</Text>
+            <TextInput
+              value={basicForm.soBiCan}
+              onChangeText={t => handleBasicChange('soBiCan', t)}
+              placeholder="Nhập số"
+              keyboardType="numeric"
+              style={styles.input}
+              placeholderTextColor={COLOR.GRAY4}
+            />
+          </View>
+          <View style={{flex: 1}}>
+            <Text style={styles.label}>Loại tội</Text>
+            <TextInput
+              value={basicForm.crimeType}
+              onChangeText={t => handleBasicChange('crimeType', t)}
+              placeholder="Nhập loại tội"
+              style={styles.input}
+              placeholderTextColor={COLOR.GRAY4}
+            />
+          </View>
+        </View>
+
+        <View style={styles.fieldBox}>
+          <Text style={styles.label}>Điều luật</Text>
+          <TextInput
+            value={basicForm.applicableLaw}
+            onChangeText={t => handleBasicChange('applicableLaw', t)}
+            placeholder="Nhập điều luật"
+            style={styles.input}
+            placeholderTextColor={COLOR.GRAY4}
+          />
+        </View>
+
+        <View style={styles.fieldBox}>
+          <Text style={styles.label}>Mô tả</Text>
+          <TextInput
+            value={basicForm.moTa}
+            onChangeText={t => handleBasicChange('moTa', t)}
+            placeholder="Mô tả vụ án"
+            style={[styles.input, styles.textArea]}
+            multiline
+            numberOfLines={4}
+            placeholderTextColor={COLOR.GRAY4}
+          />
+        </View>
+
+        {/* Officer */}
+        <View style={styles.fieldBox}>
+          <Text style={styles.label}>Cán bộ thụ lý</Text>
+          <TouchableOpacity onPress={() => setOfficerModal(true)}>
+            <TextInput
+              value={selectedOfficer ? selectedOfficer.fullName : ''}
+              placeholder="Chọn cán bộ"
+              editable={false}
+              pointerEvents="none"
+              style={styles.input}
+              placeholderTextColor={COLOR.GRAY4}
+            />
+          </TouchableOpacity>
+          <StaffSelectModal
+            visible={officerModal}
+            onClose={() => setOfficerModal(false)}
+            onSelect={handleSelectOfficer}
+          />
+        </View>
+
+        {/* Dynamic groups */}
+        {template.groups.map(group => (
+          <View key={group.id} style={styles.groupBox}>
+            <Text style={styles.groupTitle}>{group.title}</Text>
+            {group.description ? <Text style={styles.groupDesc}>{group.description}</Text> : null}
+
+            {group.fields.map(field => {
+              const value = dynamicFields[field.id];
+              return (
+                <View key={field.id} style={styles.fieldBox}>
+                  <Text style={styles.label}>
+                    {field.fieldLabel} {field.isRequired && <Text style={{color: 'red'}}>*</Text>}
+                  </Text>
+
+                  {field.fieldType === 'date' ? (
+                    <>
+                      <TouchableOpacity
+                        onPress={() => {
+                          setSelectedDateFieldId(field.id);
+                          setDatePickerVisible(true);
+                        }}>
+                        <TextInput
+                          style={styles.input}
+                          value={value ? moment(value).format('DD/MM/YYYY') : ''}
+                          placeholder={field.placeholder || `Chọn ${field.fieldLabel}`}
+                          editable={false}
+                          placeholderTextColor={COLOR.GRAY4}
+                        />
+                      </TouchableOpacity>
+                    </>
+                  ) : field.fieldType === 'select' ? (
+                    <>
+                      <TouchableOpacity
+                        onPress={() => {
+                          setSelectOptions(field.options ?? []);
+                          setSelectFieldId(field.id);
+                          setSelectModalVisible(true);
+                        }}>
+                        <TextInput
+                          style={styles.input}
+                          value={
+                            value
+                              ? (field.options ?? []).find(o => o.value === value)?.label ?? value
+                              : ''
+                          }
+                          placeholder={field.placeholder || `Chọn ${field.fieldLabel}`}
+                          editable={false}
+                          placeholderTextColor={COLOR.GRAY4}
+                        />
+                      </TouchableOpacity>
+                    </>
+                  ) : (
+                    <TextInput
+                      style={[styles.input, field.fieldType === 'textarea' ? styles.textArea : {}]}
+                      placeholder={field.placeholder || `Nhập ${field.fieldLabel}`}
+                      value={value ?? ''}
+                      onChangeText={t =>
+                        handleDynamicFieldChange(
+                          field.id,
+                          field.fieldType === 'number' ? t.replace(/[^0-9]/g, '') : t,
+                        )
+                      }
+                      keyboardType={field.fieldType === 'number' ? 'numeric' : 'default'}
+                      multiline={field.fieldType === 'textarea'}
+                      numberOfLines={field.fieldType === 'textarea' ? 4 : 1}
+                      placeholderTextColor={COLOR.GRAY4}
+                    />
+                  )}
+                </View>
+              );
+            })}
+          </View>
+        ))}
+
+        {/* Save button */}
+        <TouchableOpacity
+          disabled={isCreating}
+          onPress={handleSubmit}
+          style={[
+            styles.saveBtn,
+            isCreating ? {opacity: 0.7} : {},
+            {marginBottom: inset.bottom ? inset.bottom : 24},
+          ]}>
+          {isCreating ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.saveText}>Tạo vụ án</Text>
+          )}
+        </TouchableOpacity>
+
+        {/* Date Picker */}
+        <DateTimePickerModal
+          isVisible={datePickerVisible}
+          mode="date"
+          date={
+            selectedDateFieldId && dynamicFields[selectedDateFieldId]
+              ? new Date(dynamicFields[selectedDateFieldId])
+              : new Date()
+          }
+          onConfirm={d => {
+            setDatePickerVisible(false);
+            if (selectedDateFieldId) {
+              handleDynamicFieldChange(selectedDateFieldId, d);
+            }
+          }}
+          onCancel={() => setDatePickerVisible(false)}
+        />
+
+        {/* Select Modal */}
+        <Modal visible={selectModalVisible} transparent animationType="slide">
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={{fontWeight: 'bold', fontSize: 16, marginBottom: 8}}>Chọn</Text>
+              <FlatList
+                data={selectOptions}
+                keyExtractor={item => item.value}
+                renderItem={({item}) => (
+                  <TouchableOpacity
+                    onPress={() => {
+                      if (selectFieldId) handleDynamicFieldChange(selectFieldId, item.value);
+                      setSelectModalVisible(false);
+                    }}
+                    style={{paddingVertical: 12}}>
+                    <Text>{item.label}</Text>
+                  </TouchableOpacity>
+                )}
+                ItemSeparatorComponent={() => <View style={{height: 1, backgroundColor: '#eee'}} />}
+              />
+              <TouchableOpacity
+                style={{marginTop: 12}}
+                onPress={() => setSelectModalVisible(false)}>
+                <Text style={{color: '#2563eb', textAlign: 'center'}}>Đóng</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+      </ScrollView>
+    </KeyboardAvoidingView>
+  );
+};
+
 const styles = StyleSheet.create({
-  container: {backgroundColor: '#f8f9fa'},
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    margin: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 2,
-  },
+  container: {backgroundColor: '#f8f9fa', padding: 16},
+  center: {alignItems: 'center', justifyContent: 'center'},
+  sectionTitle: {fontSize: 18, fontWeight: 'bold', color: '#2563eb', marginBottom: 4},
+  sectionDesc: {fontSize: 14, color: '#64748b', marginBottom: 16},
   fieldBox: {marginBottom: 12},
-  label: {fontWeight: 'bold', fontSize: 14, color: '#334155', marginBottom: 4},
+  twoCols: {flexDirection: 'row', alignItems: 'center', marginBottom: 12},
+  label: {fontWeight: 'bold', fontSize: 14, color: '#334155', marginBottom: 6},
   input: {
     borderWidth: 1,
     borderColor: '#cbd5e1',
-    borderRadius: 6,
-    paddingVertical: 8,
-    paddingHorizontal: 10,
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
     fontSize: 14,
-    backgroundColor: '#f8fafc',
-  },
-  error: {color: COLOR.PRIMARY, fontSize: 13, marginTop: 4},
-  sectionTitle: {fontSize: 16, fontWeight: 'bold', color: '#2563eb', marginLeft: 16, marginTop: 18},
-  stageBox: {
     backgroundColor: '#fff',
-    borderRadius: 8,
-    padding: 12,
-    margin: 8,
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 2,
-    elevation: 1,
+    color: '#334155',
   },
-  stageLabel: {fontWeight: 'bold', color: '#334155', marginBottom: 6},
-  removeBtn: {
-    marginTop: 6,
-    backgroundColor: '#fee2e2',
-    borderRadius: 6,
-    padding: 8,
-    alignItems: 'center',
-  },
-  removeText: {color: COLOR.PRIMARY, fontWeight: 'bold'},
-  addBtn: {
-    backgroundColor: '#e0e7ff',
-    borderRadius: 8,
-    padding: 12,
-    alignItems: 'center',
-    marginVertical: 8,
-    marginHorizontal: 16,
-  },
-  addText: {color: '#2563eb', fontWeight: 'bold'},
+  groupBox: {backgroundColor: '#fff', borderRadius: 12, padding: 14, marginBottom: 16},
+  groupTitle: {fontSize: 16, fontWeight: '700', color: '#1e40af', marginBottom: 8},
+  groupDesc: {fontSize: 13, color: '#64748b', marginBottom: 8},
   saveBtn: {
-    marginVertical: 8,
-    marginHorizontal: 16,
     backgroundColor: '#2563eb',
-    borderRadius: 8,
+    borderRadius: 10,
     padding: 14,
     alignItems: 'center',
+    marginTop: 8,
   },
-  saveText: {color: '#fff', fontWeight: 'bold', fontSize: 16},
+  saveText: {color: '#fff', fontWeight: '700', fontSize: 16},
+  textArea: {minHeight: 100, textAlignVertical: 'top'},
+  modalOverlay: {flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end'},
+  modalContent: {
+    backgroundColor: '#fff',
+    padding: 16,
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+    maxHeight: '60%',
+  },
 });
+
+export default CaseCreateScreenV2;
