@@ -100,11 +100,11 @@ const CaseDetailScreen = () => {
   const {data: planCaseData} = usePlanCase(id || '');
   const {data: apiCaseDetail, isLoading} = useCaseDetail(id ? {id} : undefined);
   const {mutate: onUpdateCase, isPending} = useUpdateCase();
-  useEffect(() => {
-    if (apiCaseDetail) {
-      console.log('🧾 Case detail raw:', JSON.stringify(apiCaseDetail, null, 2));
-    }
-  }, [apiCaseDetail]);
+  // useEffect(() => {
+  //   if (apiCaseDetail) {
+  //     console.log('🧾 Case detail raw:', JSON.stringify(apiCaseDetail, null, 2));
+  //   }
+  // }, [apiCaseDetail]);
   // Transform API data
   const transformedData = useMemo(() => {
     return transformApiData(apiCaseDetail, planCaseData);
@@ -520,7 +520,7 @@ const CaseDetailScreen = () => {
       {/* Thông tin từ Groups */}
       {caseData.groups && caseData.groups.length > 0 && (
         <>
-          {console.log('✅ Groups in render:', caseData.groups)}
+          {/* {console.log('✅ Groups in render:', caseData.groups)} */}
           <View style={styles.card}>
             <Text style={styles.sectionTitle}>Thông tin chi tiết</Text>
             {caseData.groups.map((group: any, gIdx: any) => (

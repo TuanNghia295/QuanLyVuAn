@@ -40,7 +40,7 @@ export interface CaseFieldPayload {
 // Danh sách vụ án
 export const listCase = async (limit: number, page: number, q?: string) => {
   const res = await AxiosClient.get(`api/v1/cases?limit=${limit}&page=${page}&q=${q}&order=desc`);
-  return res.data;
+  return res; // ✅ vì interceptor đã return response.data
 };
 
 // Chi tiết vụ án

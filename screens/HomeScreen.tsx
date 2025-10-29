@@ -62,6 +62,7 @@ const HomeScreen = (): React.ReactNode => {
     isLoading,
     refetch: refetchListCase,
   } = useListCase(10, debouncedSearch?.trim());
+
   // State cho refresh
   const [refreshing, setRefreshing] = useState(false);
 
@@ -76,7 +77,7 @@ const HomeScreen = (): React.ReactNode => {
 
   // Flatten data từ pages
   const allCases = useMemo(() => {
-    return listCase?.pages?.flatMap(page => page) || [];
+    return listCase?.pages?.flatMap(page => page?.data || [])?.filter(Boolean) || [];
   }, [listCase]);
 
   // Mapping status từ API sang hiển thị
@@ -189,7 +190,7 @@ const HomeScreen = (): React.ReactNode => {
   const renderCaseItem = ({item, index}: {item: any; index: number}) => {
     const statusText = getStatusText(item.status);
     const statusColor = getStatusColor(item.status);
-    const hasRequiredInfo = item.fields && item.fields.length > 0;
+    const hasRequiredInfo = item.hasPhases;
 
     return (
       <TouchableOpacity

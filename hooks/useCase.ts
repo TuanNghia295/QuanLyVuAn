@@ -13,12 +13,13 @@ export function useListCase(limit = 10, q?: string) {
   return useInfiniteQuery({
     initialPageParam: 1,
     queryKey: ['listCase', q],
-    queryFn: ({pageParam = 1}) => listCase(limit, pageParam, q),
-    refetchOnWindowFocus: true,
+    queryFn: async ({pageParam = 1}) => {
+      const result = await listCase(limit, pageParam, q);
+      return result; // vẫn là { data, pagination }
+    },
     getNextPageParam: lastPage => {
-      const {pagination} = lastPage;
-      if (pagination?.nextPage) {
-        return pagination.currentPage + 1;
+      if (lastPage.pagination?.nextPage) {
+        return lastPage.pagination.currentPage + 1;
       }
       return undefined;
     },
