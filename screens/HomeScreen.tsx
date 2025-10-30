@@ -93,7 +93,7 @@ const HomeScreen = (): React.ReactNode => {
       IN_PROGRESS: 'Đang xử lý', // Đang xử lý
       COMPLETED: 'Hoàn thành', // Đã đóng
       ON_HOLD: 'Tạm hoãn', // Tạm hoãn
-      CANCELLED: 'Hủy bỏ', // Hủy bỏ
+      CANCELLED: 'Đã hủy', // Hủy bỏ
     };
     return statusMap[status] || status;
   };

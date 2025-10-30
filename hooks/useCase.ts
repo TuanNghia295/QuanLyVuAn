@@ -5,6 +5,7 @@ import {
   listCase,
   planCaseById,
   updateCase,
+  updateCaseField,
 } from '@/services/caseServices';
 import {useUserStore} from '@/store/userStore';
 import {useInfiniteQuery, useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
@@ -43,11 +44,11 @@ export const useUpdateCase = () => {
       return await updateCase(id, body);
     },
     onSuccess: (_data, variables) => {
-      console.log('✅ Cập nhật vụ án thành công');
+      queryClient.invalidateQueries({queryKey: ['listCase']});
       queryClient.invalidateQueries({queryKey: ['caseDetail', variables.id]});
     },
     onError: error => {
-      console.error('❌ Lỗi khi cập nhật vụ án:', error);
+      console.error('Lỗi khi cập nhật vụ án:', error);
     },
   });
 };
@@ -71,6 +72,24 @@ export const useCreateCase = () => {
     },
     onError: e => {
       console.log('Create Case Error', e);
+    },
+  });
+};
+
+// Cập nhật trường động
+export const useUpdateCaseField = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationKey: ['caseField'],
+    mutationFn: async ({id, body}: {id: string; body: CaseUpdatePayload}) => {
+      return await updateCaseField(id, body);
+    },
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({queryKey: ['listCase']});
+      queryClient.invalidateQueries({queryKey: ['caseDetail', variables.id]});
+    },
+    onError: error => {
+      console.error('Lỗi khi cập nhật vụ án:', error);
     },
   });
 };

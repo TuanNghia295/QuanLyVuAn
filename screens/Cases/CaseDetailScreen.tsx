@@ -1,6 +1,8 @@
+import StaffSelectModal from '@/components/Modal/StaffSelectModal';
 import RowComponent from '@/components/rowComponent';
 import TextComponent from '@/components/textComponent';
-import {useCaseDetail, usePlanCase, useUpdateCase} from '@/hooks/useCase';
+import {useCaseDetail, usePlanCase, useUpdateCase, useUpdateCaseField} from '@/hooks/useCase';
+import {CaseUpdatePayload} from '@/services/caseServices';
 import {Ionicons} from '@expo/vector-icons';
 import {useLocalSearchParams} from 'expo-router';
 import React, {useEffect, useMemo, useState} from 'react';
@@ -74,7 +76,7 @@ const transformApiData = (apiData: any, planCaseData?: any) => {
     numberOfDefendants: apiData.numberOfDefendants || '',
     crimeType: apiData.crimeType || '',
     description: apiData.description || '',
-    order: apiData.order || '',
+    // order: apiData.order || '',
     isCompleted: apiData.isCompleted ?? apiData.status === 'COMPLETED',
     groups: apiData.groups || apiData.template?.groups || [],
     stages: Array.isArray(apiData.phases)
@@ -100,11 +102,16 @@ const CaseDetailScreen = () => {
   const {data: planCaseData} = usePlanCase(id || '');
   const {data: apiCaseDetail, isLoading} = useCaseDetail(id ? {id} : undefined);
   const {mutate: onUpdateCase, isPending} = useUpdateCase();
-  // useEffect(() => {
-  //   if (apiCaseDetail) {
-  //     console.log('🧾 Case detail raw:', JSON.stringify(apiCaseDetail, null, 2));
-  //   }
-  // }, [apiCaseDetail]);
+  const [staffModalVisible, setStaffModalVisible] = useState(false);
+  const {mutate: onUpdateCaseField, isPending: isUpdatingField} = useUpdateCaseField();
+
+  // Define state for selected field date
+  const [selectedFieldDate, setSelectedFieldDate] = useState<{
+    groupIdx: number;
+    fieldIdx: number;
+    currentValue: string;
+  } | null>(null);
+
   // Transform API data
   const transformedData = useMemo(() => {
     return transformApiData(apiCaseDetail, planCaseData);
@@ -130,30 +137,54 @@ const CaseDetailScreen = () => {
   const handleUpdateStatus = (newStatus: string) => {
     if (!id) return;
 
-    // Chuyển đổi status sang API format
     const apiStatus = REVERSE_STATUS_MAP[newStatus as keyof typeof REVERSE_STATUS_MAP] || 'PENDING';
-    const isCompleted = apiStatus === 'COMPLETED';
 
-    // Tạo payload để update
-    const updatePayload = {
-      name: caseData.name,
+    const updatePayload: CaseUpdatePayload = {
+      status: apiStatus,
+      name: caseData.name || '',
       description: caseData.description || '',
-      order: caseData.order || '',
+      // order: caseData.order || '',
       startDate: parseDate(caseData.decisionDate),
       endDate: parseDate(caseData.endDate),
-      isCompleted: isCompleted,
-      tasks: [], // Có thể thêm tasks nếu cần
+      isCompleted: caseData.isCompleted || false,
+      userId: caseData.officer?.id || null,
+      tasks: [],
+      applicableLaw: caseData.applicableLaw || '',
+      numberOfDefendants: caseData.numberOfDefendants || '',
+      crimeType: caseData.crimeType || '',
+      groups:
+        caseData.groups?.map((g: any) => ({
+          id: g.id,
+          title: g.title,
+          description: g.description,
+          index: g.index ?? 0,
+          fields:
+            g.fields?.map((f: any) => ({
+              id: f.id,
+              fieldLabel: f.fieldLabel,
+              fieldValue: f.fieldValue || '',
+              placeholder: f.placeholder || '',
+              defaultValue: f.defaultValue || '',
+              description: f.description || '',
+              isRequired: f.isRequired ?? false,
+              isEditable: f.isEditable ?? true,
+              index: f.index ?? 0,
+              options: f.options || [],
+            })) || [],
+        })) || [],
     };
 
-    // Gọi API update
-    onUpdateCase(
+    console.log('🟢 Update status payload:', updatePayload);
+
+    onUpdateCaseField(
       {id, body: updatePayload},
       {
         onSuccess: () => {
           Alert.alert('Thành công', 'Cập nhật trạng thái vụ án thành công');
-          setCaseData(prev => ({...prev, status: newStatus, isCompleted}));
+          setCaseData(prev => ({...prev, status: newStatus}));
         },
-        onError: () => {
+        onError: error => {
+          console.error('❌ Lỗi khi cập nhật trạng thái vụ án:', error);
           Alert.alert('Lỗi', 'Không thể cập nhật trạng thái vụ án');
         },
       },
@@ -183,18 +214,45 @@ const CaseDetailScreen = () => {
   const handleSaveEdit = () => {
     if (!id) return;
 
-    // Tạo payload để update
-    const updatePayload = {
-      name: edited.name,
+    const updatePayload: CaseUpdatePayload & {
+      applicableLaw?: string;
+      numberOfDefendants?: string;
+      crimeType?: string;
+      status?: string;
+      groups?: any[];
+    } = {
+      // Các trường bắt buộc theo type CaseUpdatePayload
+      name: edited.name || '',
       description: edited.description || '',
-      order: edited.order || '',
+      // order: edited.order || '',
       startDate: parseDate(edited.decisionDate),
       endDate: parseDate(edited.endDate),
       isCompleted: edited.isCompleted || false,
+      userId: edited.officer?.id || null,
       tasks: [],
+
+      // Các trường backend thật sự cần
+      status: REVERSE_STATUS_MAP[edited.status as keyof typeof REVERSE_STATUS_MAP] || 'PENDING',
+      applicableLaw: edited.applicableLaw || '',
+      numberOfDefendants: edited.numberOfDefendants || '',
+      crimeType: edited.crimeType || '',
+      groups:
+        edited.groups?.map((g: any) => ({
+          id: g.id,
+          title: g.title,
+          description: g.description,
+          index: g.index,
+          fields:
+            g.fields?.map((f: any) => ({
+              id: f.id,
+              fieldLabel: f.fieldLabel,
+              fieldValue: f.fieldValue,
+            })) || [],
+        })) || [],
     };
 
-    // Gọi API update
+    // console.log('✅ updatePayload gửi lên:', JSON.stringify(updatePayload, null, 2));
+
     onUpdateCase(
       {id, body: updatePayload},
       {
@@ -204,8 +262,8 @@ const CaseDetailScreen = () => {
           setEditMode(false);
         },
         onError: error => {
+          console.error('❌ Lỗi khi cập nhật:', error);
           Alert.alert('Lỗi', 'Không thể cập nhật thông tin vụ án');
-          console.error('Update error:', error);
         },
       },
     );
@@ -313,8 +371,25 @@ const CaseDetailScreen = () => {
             placeholder="Nhập loại tội phạm"
           />
 
+          <Text style={styles.inputLabel}>Cán bộ thụ lý</Text>
+          <TouchableOpacity
+            style={[styles.input, {justifyContent: 'center'}]}
+            onPress={() => setStaffModalVisible(true)}>
+            <Text style={{fontSize: 14, color: edited.officer?.name ? '#000' : '#94a3b8'}}>
+              {edited.officer?.name || 'Chọn cán bộ thụ lý'}
+            </Text>
+          </TouchableOpacity>
+
+          <StaffSelectModal
+            visible={staffModalVisible}
+            onClose={() => setStaffModalVisible(false)}
+            onSelect={staff => {
+              setEdited(e => ({...e!, officer: {id: staff.id, name: staff.fullName}}));
+            }}
+          />
+
           {/* Ngày bắt đầu/kết thúc */}
-          <Text style={styles.inputLabel}>Ngày bắt đầu (dd/mm/yyyy)</Text>
+          {/* <Text style={styles.inputLabel}>Ngày bắt đầu (dd/mm/yyyy)</Text>
           <TouchableOpacity
             onPress={() => setDatePickerVisible('decisionDate')}
             activeOpacity={0.7}>
@@ -326,9 +401,9 @@ const CaseDetailScreen = () => {
                 placeholder="01/01/2024"
               />
             </View>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
 
-          <Text style={styles.inputLabel}>Ngày kết thúc (dd/mm/yyyy)</Text>
+          {/* <Text style={styles.inputLabel}>Ngày kết thúc (dd/mm/yyyy)</Text>
           <TouchableOpacity onPress={() => setDatePickerVisible('endDate')} activeOpacity={0.7}>
             <View pointerEvents="none">
               <TextInput
@@ -338,7 +413,7 @@ const CaseDetailScreen = () => {
                 placeholder="31/12/2024"
               />
             </View>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
 
           <DateTimePickerModal
             isVisible={datePickerVisible !== null}
@@ -373,6 +448,41 @@ const CaseDetailScreen = () => {
             locale="vi"
           />
 
+          {/* DatePicker cho các trường động */}
+          <DateTimePickerModal
+            isVisible={selectedFieldDate !== null}
+            mode="date"
+            date={(() => {
+              if (selectedFieldDate?.currentValue) {
+                try {
+                  return new Date(selectedFieldDate.currentValue);
+                } catch {
+                  return new Date();
+                }
+              }
+              return new Date();
+            })()}
+            onConfirm={date => {
+              if (selectedFieldDate) {
+                const isoDate = date.toISOString();
+                setEdited(e => {
+                  const newGroups = [...e.groups];
+                  newGroups[selectedFieldDate.groupIdx] = {
+                    ...newGroups[selectedFieldDate.groupIdx],
+                    fields: newGroups[selectedFieldDate.groupIdx].fields.map(
+                      (fld: any, idx: number) =>
+                        idx === selectedFieldDate.fieldIdx ? {...fld, fieldValue: isoDate} : fld,
+                    ),
+                  };
+                  return {...e, groups: newGroups};
+                });
+              }
+              setSelectedFieldDate(null);
+            }}
+            onCancel={() => setSelectedFieldDate(null)}
+            locale="vi"
+          />
+
           {/* Nhóm và trường động */}
           {Array.isArray(edited.groups) && edited.groups.length > 0 && (
             <View style={{marginTop: 16}}>
@@ -389,24 +499,49 @@ const CaseDetailScreen = () => {
                             {field.fieldLabel}
                             {field.isRequired ? ' *' : ''}
                           </Text>
-                          <TextInput
-                            style={styles.input}
-                            value={field.fieldValue}
-                            onChangeText={v => {
-                              setEdited(e => {
-                                const newGroups = [...e.groups];
-                                newGroups[gIdx] = {
-                                  ...newGroups[gIdx],
-                                  fields: newGroups[gIdx].fields.map((fld: any, idx: number) =>
-                                    idx === fIdx ? {...fld, fieldValue: v} : fld,
-                                  ),
-                                };
-                                return {...e, groups: newGroups};
-                              });
-                            }}
-                            placeholder={field.placeholder || ''}
-                            editable={field.isEditable}
-                          />
+                          {field.fieldType === 'date' ? (
+                            <TouchableOpacity
+                              onPress={() =>
+                                setSelectedFieldDate({
+                                  groupIdx: gIdx,
+                                  fieldIdx: fIdx,
+                                  currentValue: field.fieldValue || '',
+                                })
+                              }
+                              activeOpacity={0.7}>
+                              <View pointerEvents="none">
+                                <TextInput
+                                  style={styles.input}
+                                  value={
+                                    field.fieldValue
+                                      ? formatDate(new Date(field.fieldValue).toString())
+                                      : ''
+                                  }
+                                  editable={false}
+                                  placeholder={field.placeholder || 'Chọn ngày'}
+                                />
+                              </View>
+                            </TouchableOpacity>
+                          ) : (
+                            <TextInput
+                              style={styles.input}
+                              value={field.fieldValue}
+                              onChangeText={v => {
+                                setEdited(e => {
+                                  const newGroups = [...e.groups];
+                                  newGroups[gIdx] = {
+                                    ...newGroups[gIdx],
+                                    fields: newGroups[gIdx].fields.map((fld: any, idx: number) =>
+                                      idx === fIdx ? {...fld, fieldValue: v} : fld,
+                                    ),
+                                  };
+                                  return {...e, groups: newGroups};
+                                });
+                              }}
+                              placeholder={field.placeholder || ''}
+                              // editable={field.isEditable}
+                            />
+                          )}
                         </View>
                       ))}
                     </View>
@@ -428,7 +563,7 @@ const CaseDetailScreen = () => {
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.saveBtn, isPending && styles.saveBtnDisabled]}
-              onPress={handleSaveEdit}
+              onPress={() => handleSaveEdit()}
               disabled={isPending}>
               {isPending ? (
                 <ActivityIndicator size="small" color="#fff" />

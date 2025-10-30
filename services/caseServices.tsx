@@ -1,17 +1,4 @@
 import AxiosClient from '@/api/axiosClient';
-
-export interface CaseUpdatePayload {
-  name: string;
-  description: string;
-  order: string;
-  startDate: string;
-  endDate: string;
-  isCompleted: boolean;
-  tasks: {
-    name: string;
-  }[];
-}
-
 export interface CreateCasePayload {
   templateId: string;
   applicableLaw: string;
@@ -35,6 +22,42 @@ export interface CaseFieldPayload {
   defaultValue: string;
   description: string;
   value?: string;
+}
+
+export interface CaseUpdatePayload {
+  status: string;
+  name: string;
+  description: string;
+  startDate: string;
+  endDate: string;
+  applicableLaw: string;
+  numberOfDefendants: string;
+  crimeType: string;
+  userId: string | null;
+  isCompleted: boolean;
+  tasks: string[];
+  groups: CaseGroupUpdate[];
+}
+
+export interface CaseGroupUpdate {
+  id: string;
+  title: string;
+  description: string;
+  index: number;
+  fields: CaseFieldUpdate[];
+}
+
+export interface CaseFieldUpdate {
+  id: string;
+  fieldLabel: string;
+  fieldValue: string;
+  placeholder: string;
+  defaultValue: string;
+  description: string;
+  isRequired: boolean;
+  isEditable: boolean;
+  index: number;
+  options: string[];
 }
 
 // Danh sách vụ án
@@ -65,11 +88,16 @@ export const planCaseById = async (caseId: string) => {
 // Tạo vụ án
 export const createCase = async (data: CreateCasePayload) => {
   try {
-    console.log('Data', JSON.stringify(data, null, 2));
     const res = await AxiosClient.post('api/v1/cases', data);
     return res;
   } catch (error) {
     console.error('Error creating case:', error);
     throw error;
   }
+};
+
+// Cập nhật trường động theo ID
+export const updateCaseField = async (caseId: string, body: CaseUpdatePayload) => {
+  const res = await AxiosClient.put(`api/v1/cases/${caseId}`, body);
+  return res;
 };
